@@ -153,8 +153,9 @@
         /* --- Print Styles --- */
         @media print {
             body {
-                background-color: white;
+                background: none;
                 padding: 0;
+                margin: 0;
             }
 
             .a4-page {
@@ -162,13 +163,13 @@
                 height: 100%;
                 margin: 0;
                 padding: 10mm;
-                /* Adjust padding for printing */
                 box-shadow: none;
                 border: none;
             }
 
             .main-content {
-                gap: 10mm;
+                gap: 15mm;
+                /* Match web style */
             }
 
             .print-button {
@@ -176,8 +177,8 @@
             }
 
             .user-guide {
-                font-size: 7pt;
-                /* Ensure text is not too large when printing */
+                font-size: 0.8rem;
+                /* Match web style */
             }
         }
 
@@ -207,9 +208,9 @@
 
 <body>
 
-    <button class="print-button" onclick="printDiv('printableArea')">Udskriv denne side</button>
+    <button class="print-button" onclick="window.print()">Udskriv denne side</button>
 
-    <div id="printableArea" class="a4-page">
+    <div class="a4-page">
         <h1>Kodeordshusker</h1>
         <div class="main-content">
             <!-- Left Column: Matrix + 4 Password Groups -->
@@ -425,17 +426,6 @@
 
             populateMatrix();
         });
-
-        function printDiv(divId) {
-            var printContents = document.getElementById(divId).innerHTML;
-            var originalContents = document.body.innerHTML;
-
-            document.body.innerHTML = printContents;
-
-            window.print();
-
-            document.body.innerHTML = originalContents;
-        }
     </script>
 
 </body>
