@@ -50,13 +50,14 @@
             /* Each column takes up 50% of the available space */
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            /* Space between items within a column */
+            gap: 12px;
+            /* Reduced gap */
         }
 
         /* --- Matrix Styles --- */
         h1 {
-            margin: 0 0 20px 0;
+            margin: 0 0 15px 0;
+            /* Reduced margin */
             font-size: 2rem;
             color: #4a5568;
             width: 100%;
@@ -99,7 +100,8 @@
             padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
+            /* Reduced gap */
         }
 
         .detail-item {
@@ -142,7 +144,8 @@
         }
 
         .user-guide p {
-            margin: 0 0 5px 0;
+            margin: 0 0 4px 0;
+            /* Reduced margin */
             line-height: 1.4;
         }
 
@@ -160,7 +163,8 @@
 
             .a4-page {
                 width: 100%;
-                height: 100%;
+                height: auto;
+                /* Allow height to be determined by content */
                 margin: 0;
                 padding: 10mm;
                 box-shadow: none;
@@ -322,7 +326,7 @@
                 </div>
             </div>
 
-            <!-- Right Column: 6 Password Groups -->
+            <!-- Right Column: 4 Password Groups -->
             <div class="right-column">
                 <div class="password-group">
                     <div class="detail-item"><label>Konto:</label>
