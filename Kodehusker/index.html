@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="da">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kodeordshusker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Basic styles for the page and typography */
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            /* Align to top */
+            min-height: 100vh;
+            color: #333;
+            padding: 20px 0;
+            /* Add some vertical padding */
+        }
+
+        /* Container to simulate an A4 paper sheet */
+        .a4-page {
+            background: white;
+            width: 210mm;
+            height: 297mm;
+            padding: 10mm;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Main Two-Column Layout --- */
+        .main-content {
+            display: flex;
+            gap: 15mm;
+            /* Space between left and right columns */
+            width: 100%;
+        }
+
+        .left-column,
+        .right-column {
+            flex: 1;
+            /* Each column takes up 50% of the available space */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            /* Space between items within a column */
+        }
+
+        /* --- Matrix Styles --- */
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 2rem;
+            color: #4a5568;
+            width: 100%;
+            text-align: center;
+        }
+
+        .password-matrix {
+            border-collapse: collapse;
+            font-size: 1rem;
+            /* Slightly smaller for better fit */
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .password-matrix th,
+        .password-matrix td {
+            border: 2px solid #a0aec0;
+            width: 40px;
+            /* Adjusted size */
+            height: 40px;
+            /* Adjusted size */
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .password-matrix th {
+            background-color: #edf2f7;
+            font-weight: bold;
+        }
+
+        /* Empty corner cell */
+        .password-matrix thead th:first-child {
+            border: none;
+            background-color: transparent;
+        }
+
+        /* --- Password Group Styles --- */
+        .password-group {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .detail-item label {
+            font-size: 0.8rem;
+            /* Adjusted font size */
+            font-weight: 700;
+            color: #2d3748;
+            width: 80px;
+            /* Aligns the fields */
+            flex-shrink: 0;
+        }
+
+        .detail-item .placeholder {
+            flex-grow: 1;
+            border-bottom: 2px solid #cbd5e0;
+            height: 28px;
+        }
+
+        /* --- User Guide Styles --- */
+        .user-guide {
+            margin-top: auto;
+            /* Pushes guide to the bottom of the flex container */
+            padding-top: 10px;
+            border-top: 2px solid #e2e8f0;
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
+
+        .user-guide h3 {
+            font-size: 1rem;
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .user-guide p {
+            margin: 0 0 5px 0;
+            line-height: 1.4;
+        }
+
+        .user-guide strong {
+            color: #2d3748;
+        }
+
+        /* --- Print Styles --- */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .a4-page {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 10mm;
+                /* Adjust padding for printing */
+                box-shadow: none;
+                border: none;
+            }
+
+            .main-content {
+                gap: 10mm;
+            }
+
+            .print-button {
+                display: none;
+            }
+
+            .user-guide {
+                font-size: 7pt;
+                /* Ensure text is not too large when printing */
+            }
+        }
+
+        /* A simple button for user convenience */
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.2s;
+            z-index: 10;
+        }
+
+        .print-button:hover {
+            background-color: #2b6cb0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="print-button" onclick="printDiv('printableArea')">Udskriv denne side</button>
+
+    <div id="printableArea" class="a4-page">
+        <h1>Kodeordshusker</h1>
+        <div class="main-content">
+            <!-- Left Column: Matrix + 4 Password Groups -->
+            <div class="left-column">
+                <div class="matrix-container">
+                    <table class="password-matrix" id="password-matrix">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>A</th>
+                                <th>B</th>
+                                <th>C</th>
+                                <th>D</th>
+                                <th>E</th>
+                                <th>F</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th>1</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th>2</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th>3</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th>4</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th>5</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <th>6</th>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="password-group">
+                    <div class="detail-item"><label>Konto:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Brugernavn:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Kodeord:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                </div>
+                <div class="password-group">
+                    <div class="detail-item"><label>Konto:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Brugernavn:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Kodeord:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                </div>
+                <div class="password-group">
+                    <div class="detail-item"><label>Konto:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Brugernavn:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Kodeord:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: 6 Password Groups -->
+            <div class="right-column">
+                <div class="password-group">
+                    <div class="detail-item"><label>Konto:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Brugernavn:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Kodeord:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                </div>
+                <div class="password-group">
+                    <div class="detail-item"><label>Konto:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Brugernavn:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Kodeord:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                </div>
+                <div class="password-group">
+                    <div class="detail-item"><label>Konto:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Brugernavn:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Kodeord:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                </div>
+                <div class="password-group">
+                    <div class="detail-item"><label>Konto:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Brugernavn:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Kodeord:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                </div>
+                <div class="password-group">
+                    <div class="detail-item"><label>Konto:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Brugernavn:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                    <div class="detail-item"><label>Kodeord:</label>
+                        <div class="placeholder"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="user-guide">
+            <h3>Sådan bruger du denne kodeordshusker</h3>
+            <p>
+                1. <strong>Find dine mønstre:</strong> Kig på gitteret og find et 2-3 simple mønstre (som et 'L', en
+                firkant, eller en diagonal linje).
+            </p>
+            <p>
+                2. <strong>Udfyld konto:</strong> I "Konto" feltet skrives navnet på den konto do er ved at oprette
+                (f.eks. "Spil Hjemmeside").
+            </p>
+            <p>
+                3. <strong>Udfyld brugernavn:</strong> I "Brugernavn" feltet skrives det ønskede brugernavn (f.eks.
+                "Gummitarzan").
+            </p>
+            <p>
+                4. <strong>Udfyld kodeords hint:</strong> I "Kodeord" feltet, skal du kun skrive
+                <strong>start-felterne</strong> for dine mønstre (eksempel: B2 C3 E4).
+            </p>
+            <p>
+                5. <strong>Hold det hemmeligt:</strong> For at finde dit rigtige kodeord, skal du se på dit hint på
+                dette papir, finde start-felterne på gitteret, og følge dine hemmelige mønstre. Vis
+                <strong>ALDRIG</strong> dine mønstre til nogen!
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            const matrixCells = document.querySelectorAll('#password-matrix tbody td');
+
+            function getRandomChar() {
+                const randomIndex = Math.floor(Math.random() * characters.length);
+                return characters[randomIndex];
+            }
+
+            function populateMatrix() {
+                matrixCells.forEach(cell => {
+                    cell.textContent = getRandomChar();
+                });
+            }
+
+            populateMatrix();
+        });
+
+        function printDiv(divId) {
+            var printContents = document.getElementById(divId).innerHTML;
+            var originalContents = document.body.innerHTML;
+
+            document.body.innerHTML = printContents;
+
+            window.print();
+
+            document.body.innerHTML = originalContents;
+        }
+    </script>
+
+</body>
+
+</html>
