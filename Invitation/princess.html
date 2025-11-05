@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prinsesse Fødselsdagsinvitation</title>
+    <!-- Importerer en fin, eventyrlig font til overskrifter og underskrift -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Noto+Serif:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* * Grundlæggende styling til siden (baggrunden)
+         * Gør det nemt at se kortet på skærmen.
+         */
+        body {
+            font-family: 'Noto Serif', serif;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* * Selve invitationskortet.
+         * Størrelsen er sat præcist til 10cm x 15cm.
+         */
+        .invitation-card {
+            width: 10cm;
+            height: 15cm;
+            background-color: #fffafc; /* En meget let lyserød baggrund */
+            border: 2px solid #e7a9e7; /* Lyserød kant */
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+            padding: 20px; /* ** MERE PADDING ** (Mere "luft" end v2) */
+            box-sizing: border-box; /* Sørger for at padding er inkluderet i 10x15cm */
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden; /* Holder alt pænt inde i kortet */
+        }
+
+        /* Styling til billedet */
+        .invitation-image {
+            width: 75%; /* ** LIDT SMALLERE ** billede for at give plads */
+            max-height: 4cm; /* Samme højde som før */
+            object-fit: cover; /* Beskærer billedet, så det dækker området uden at strække */
+            border-radius: 8px; /* Lidt afrundede hjørner */
+            margin: 0 auto 10px auto; /* Centrerer billedet og giver plads under */
+            display: block; /* Sørger for at margin auto virker */
+        }
+        
+        /* Hovedoverskrift: "Prinsesse Teselskab" */
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 24pt; /* ** STØRRE ** (V1: 28, V2: 20) */
+            color: #d63384;
+            text-align: center;
+            margin: 0 0 10px 0; /* Mere margen under */
+        }
+
+        /* "Kære _____" */
+        h2 {
+            font-family: 'Noto Serif', serif;
+            font-size: 11pt; /* ** STØRRE ** (Tilbage til V1 størrelse) */
+            font-weight: normal;
+            color: #333;
+            margin-top: 5px;
+            margin-bottom: 10px; /* Mere margen under */
+        }
+        
+        /* Almindelig brødtekst */
+        p {
+            font-size: 9.5pt; /* ** STØRRE ** (V1: 10, V2: 8.5) */
+            line-height: 1.45; /* Lidt mere linjeafstand */
+            color: #444;
+            margin: 5px 0; /* Lidt mere margen */
+        }
+        
+        /* S.U. teksten (lidt fremhævet) */
+        .rsvp {
+            font-weight: 700;
+            margin-top: 10px; /* Lidt mere plads over */
+        }
+
+        /* Underskrift sektionen */
+        .signature {
+            font-family: 'Dancing Script', cursive;
+            font-size: 18pt; /* ** STØRRE ** (V1: 20, V2: 16) */
+            color: #d63384;
+            text-align: right;
+            margin-top: auto; /* Skubber underskriften til bunden */
+            line-height: 1.2;
+            padding-top: 5px; /* Lidt luft over signaturen */
+        }
+
+        /* Print-knappen */
+        .print-button {
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            background-color: #d63384;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        .print-button:hover {
+            background-color: #b02a6c;
+        }
+
+        .print-button:active {
+            transform: scale(0.98);
+        }
+
+        /* * Print-specifikke regler.
+         * Disse regler gælder KUN, når der printes.
+         */
+        @media print {
+            /* * Fortæl printeren, at papirstørrelsen er præcis 10x15cm.
+             * Dette er den vigtigste del.
+             */
+            @page {
+                size: 10cm 15cm;
+                margin: 0;
+            }
+
+            /* Skjul alt på siden, UNDTAGEN selve invitationen */
+            body {
+                background-color: #fff;
+                padding: 0;
+                margin: 0;
+            }
+            
+            .print-button, body > *:not(.invitation-card) {
+                display: none;
+            }
+
+            /* Sørg for at invitationen fylder hele printsiden */
+            .invitation-card {
+                margin: 0;
+                padding: 20px; /* Genanvend den justerede padding */
+                width: 10cm;
+                height: 15cm;
+                box-shadow: none;
+                border: none;
+                border-radius: 0;
+                box-sizing: border-box; /* Vigtigt for at padding regnes med */
+            }
+
+            /* Sørg for at print-skriftstørrelser matcher de nye justerede størrelser */
+            p {
+                font-size: 9.5pt;
+            }
+
+            h1 {
+                font-size: 24pt;
+            }
+
+            h2 {
+                font-size: 11pt;
+            }
+
+            .signature {
+                font-size: 18pt;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Selve invitationskortet -->
+    <div class="invitation-card">
+        
+        <!-- Billedet af pigen -->
+        <img src="ella.jpg" alt="Fødselsdagspige" class="invitation-image">
+        
+        <h1>Prinsesse Teselskab</h1>
+        
+        <h2>Kære ______________</h2>
+        
+        <p>
+            Du inviteres hermed til min 7 års fødselsdag på Høvervej 43, 8464 Galten.
+        </p>
+        <p>
+            Temaet er Prinsesse Teselskab, så medbring din fineste kjole/udklædning samt tøj til at være ude.
+        </p>
+        <p>
+            Vi bliver hentet af min mor og skal med skolebussen til Høver kl. 13 og festen slutter med forældrekaffe fra 16.00 til 16.30.
+        </p>
+        
+        <p class="rsvp">
+            SU. seneste d. 21. November på 81719952.
+        </p>
+
+        <p class="signature">
+            De kærligste hilsner<br>
+            Ella
+        </p>
+    </div>
+
+    <!-- Denne knap skjules automatisk ved print -->
+    <button class="print-button" onclick="window.print()">Print Invitation</button>
+
+</body>
+</html>
