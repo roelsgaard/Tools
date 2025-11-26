@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bowling Fødselsdagsinvitation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700&family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Specifikke print-regler for at sikre 10x15cm formatet */
+      @media print {
+        @page {
+          size: 150mm 100mm; /* Landskab 10x15cm */
+          margin: 0;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          background: white;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
+        .no-print {
+          display: none !important;
+        }
+        .card-container {
+          box-shadow: none !important;
+          border: none !important;
+          margin: 0 !important;
+          /* Sikrer at kortet fylder papiret ud */
+          width: 150mm !important;
+          height: 100mm !important;
+          transform: scale(1) !important;
+        }
+      }
+
+      /* Skærm-visning stilarter */
+      body {
+        background-color: #f3f4f6;
+        font-family: "Fredoka", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .card-container {
+        /* Fysiske dimensioner: 150mm x 100mm */
+        width: 150mm;
+        height: 100mm;
+        background: linear-gradient(135deg, #fff1eb 0%, #ace0f9 100%);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        display: flex;
+        border-radius: 4px; /* Lille radius på skærm, forsvinder ofte i print bleed */
+        transition: transform 0.3s ease;
+      }
+
+      .decorative-circle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.6;
+        z-index: 0;
+      }
+
+      .editable:hover {
+        background-color: rgba(255, 255, 255, 0.5);
+        cursor: text;
+        border-radius: 4px;
+        outline: 2px dashed #ec4899;
+      }
+
+      .editable:focus {
+        background-color: white;
+        outline: none;
+        box-shadow: 0 0 5px rgba(236, 72, 153, 0.5);
+      }
+
+      /* Baggrunds mønster */
+      .bg-pattern {
+        background-image: radial-gradient(#ec4899 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.1;
+      }
+
+      h1 {
+        font-family: "Pacifico", cursive;
+      }
+
+      /* Fixet skrå kant */
+      .slant-bg {
+        clip-path: polygon(0 0, 90% 0, 75% 100%, 0% 100%);
+        width: 40%; /* Bredere så den dækker nok */
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Instruktioner til brugeren (vises ikke på print) -->
+    <div class="no-print w-full max-w-2xl text-center mb-8">
+      <h2 class="text-3xl font-bold text-gray-800 mb-2">
+        🎈 Fødselsdagsinvitation
+      </h2>
+      <p class="text-gray-600 mb-6">
+        Klik på teksten nede på kortet for at redigere navn, dato og tidspunkt.
+        <br />
+        Når du er færdig, tryk på knappen herunder for at printe.
+      </p>
+
+      <button
+        onclick="window.print()"
+        class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 flex items-center justify-center mx-auto gap-2"
+      >
+        <i class="fas fa-print"></i> Print Invitation
+      </button>
+    </div>
+
+    <!-- Selve Invitationen (150mm x 100mm) -->
+    <div class="card-container bg-white text-gray-800 relative">
+      <!-- Baggrundsdetaljer -->
+      <div class="absolute inset-0 bg-pattern z-0"></div>
+      <div
+        class="decorative-circle bg-pink-300 w-32 h-32 -top-10 -right-10 mix-blend-multiply filter blur-xl"
+      ></div>
+      <div
+        class="decorative-circle bg-blue-300 w-32 h-32 -bottom-10 -left-10 mix-blend-multiply filter blur-xl"
+      ></div>
+
+      <!-- Venstre side: Grafik (Billeder) -->
+      <!-- Justeret bredde og clip-path for at undgå layout fejl -->
+      <div
+        class="slant-bg absolute top-0 left-0 h-full bg-gradient-to-br from-pink-500 to-purple-600 z-10"
+      ></div>
+
+      <!-- Container til indhold ovenpå slant-baggrunden -->
+      <div
+        class="absolute top-0 left-0 h-full w-[30%] z-20 flex flex-col justify-evenly items-center py-2 pl-2"
+      >
+        <!-- Bowlingkugle Billede 1: Naia -->
+        <div
+          class="relative w-20 h-20 rounded-full border-2 border-white shadow-lg overflow-hidden bg-gray-200"
+        >
+          <img src="naia.jpeg" alt="Naia" class="w-full h-full object-cover" />
+          <div
+            class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full opacity-50 blur-[1px]"
+          ></div>
+          <!-- Bowlingkugle huller -->
+          <div
+            class="absolute top-3 left-3 w-2 h-2 bg-black rounded-full shadow-inner"
+          ></div>
+          <div
+            class="absolute top-5 left-5 w-2 h-2 bg-black rounded-full shadow-inner"
+          ></div>
+          <div
+            class="absolute top-6 left-2 w-2 h-2 bg-black rounded-full shadow-inner"
+          ></div>
+        </div>
+
+        <!-- Bowlingkugle Billede 2: Liv -->
+        <div
+          class="relative w-20 h-20 rounded-full border-2 border-white shadow-lg overflow-hidden bg-gray-200"
+        >
+          <img src="liv.jpeg" alt="Liv" class="w-full h-full object-cover" />
+          <div
+            class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full opacity-50 blur-[1px]"
+          ></div>
+          <!-- Bowlingkugle huller -->
+          <div
+            class="absolute top-3 left-3 w-2 h-2 bg-black rounded-full shadow-inner"
+          ></div>
+          <div
+            class="absolute top-5 left-5 w-2 h-2 bg-black rounded-full shadow-inner"
+          ></div>
+          <div
+            class="absolute top-6 left-2 w-2 h-2 bg-black rounded-full shadow-inner"
+          ></div>
+        </div>
+
+        <!-- Bowlingkugle Billede 3: Johanne -->
+        <div
+          class="relative w-20 h-20 rounded-full border-2 border-white shadow-lg overflow-hidden bg-gray-200"
+        >
+          <img
+            src="johanne.jpg"
+            alt="Johanne"
+            class="w-full h-full object-cover"
+          />
+          <div
+            class="absolute top-2 right-2 w-2 h-2 bg-white rounded-full opacity-50 blur-[1px]"
+          ></div>
+          <!-- Bowlingkugle huller -->
+          <div
+            class="absolute top-3 left-3 w-2 h-2 bg-black rounded-full shadow-inner"
+          ></div>
+          <div
+            class="absolute top-5 left-5 w-2 h-2 bg-black rounded-full shadow-inner"
+          ></div>
+          <div
+            class="absolute top-6 left-2 w-2 h-2 bg-black rounded-full shadow-inner"
+          ></div>
+        </div>
+
+        <div
+          class="text-center font-bold text-sm text-white font-pacifico drop-shadow-md transform -rotate-2"
+        >
+          STRIKE!
+        </div>
+      </div>
+
+      <!-- Højre side: Tekst indhold -->
+      <!-- Tilføjet margin-left for at skubbe teksten fri af billederne -->
+      <div
+        class="w-full h-full p-4 pl-[38%] flex flex-col justify-between relative z-10"
+      >
+        <!-- Overskrift -->
+        <div class="text-center">
+          <p
+            class="text-pink-600 font-bold uppercase tracking-widest text-[10px] mb-0"
+          >
+            Invitation
+          </p>
+          <h1 class="text-2xl text-purple-800 mb-1 leading-tight">
+            9 års Fødselsdag!
+          </h1>
+        </div>
+
+        <!-- Hovedtekst (Editable) -->
+        <div
+          class="text-xs text-gray-700 space-y-1 flex-grow flex flex-col justify-center"
+        >
+          <p class="font-bold text-sm">
+            Kære
+            <span
+              contenteditable="true"
+              class="editable border-b border-gray-400 min-w-[50px] inline-block text-purple-800 focus:outline-none"
+              >______________</span
+            >
+          </p>
+
+          <p class="leading-tight pt-2 pb-2">
+            Du inviteres hermed til vores 9 års fødselsdag <br />
+            <span class="font-bold text-pink-600">torsdag d. 11.12.2025</span> i
+            Bowl’n’Fun Silkeborg.
+          </p>
+
+          <div
+            class="bg-purple-50 p-1.5 rounded border-l-4 border-purple-300 my-1 shadow-sm text-[10px] leading-snug"
+          >
+            <p class="mb-1">
+              <i
+                class="fas fa-walking text-purple-500 w-3 text-center mr-0.5"
+              ></i>
+              Vi går fælles hjem fra skole, til Liv på
+              <span class="font-semibold">Birkevænget 6, 8464 Galten</span>.
+            </p>
+            <p class="mb-1">
+              <i class="fas fa-car text-purple-500 w-3 text-center mr-0.5"></i>
+              Herfra vil vi blive kørt til Silkeborg til kl 14.
+            </p>
+            <p>
+              <i
+                class="fas fa-clock text-purple-500 w-3 text-center mr-0.5"
+              ></i>
+              Festen slutter på Birkevænget
+              <span class="font-bold">kl. 17.30</span>.
+            </p>
+          </div>
+
+          <p
+            class="text-center font-pacifico text-purple-800 text-sm mt-1 pt-2"
+          >
+            Vi glæder os til at se jer!
+          </p>
+        </div>
+
+        <!-- Footer / SU -->
+        <div
+          class="mt-1 pt-1 border-t-2 border-pink-100 flex justify-between items-end text-[9px] leading-tight"
+        >
+          <div class="font-bold text-purple-600 font-pacifico text-xs pb-0.5">
+            Knus
+            <span
+              contenteditable="true"
+              class="editable px-0.5 border-b border-dashed border-gray-300"
+              >Naia, Liv & Johanne</span
+            >
+          </div>
+          <div class="text-right text-gray-600">
+            <span class="font-bold">S.U. senest d. 05. december</span><br />
+            til Chris (Johannes far)<br />
+            på tlf. <span class="font-bold">51 88 09 13</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
