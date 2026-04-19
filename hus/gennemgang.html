@@ -94,25 +94,36 @@
             background-color: #f8fafc;
         }
 
+        /* Print Styles */
+        #print-section {
+            display: none;
+        }
+
+        @media print {
+            @page { margin: 1.5cm; }
+            body { background: white !important; padding: 0 !important; margin: 0 !important; }
+            .no-print { display: none !important; }
+            #print-section { display: block !important; width: 100% !important; }
+            .content-card { border: none !important; box-shadow: none !important; }
+            table { border-collapse: collapse !important; width: 100% !important; margin-bottom: 20px; }
+            td, th { border: 1px solid #cbd5e1 !important; padding: 10px !important; text-align: left; vertical-align: top; }
+            th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; }
+            h1 { font-size: 24pt !important; margin-bottom: 20px !important; }
+            h2 { font-size: 16pt !important; margin-top: 30px !important; padding: 8px !important; background: #e2e8f0 !important; -webkit-print-color-adjust: exact; border-left: 6px solid #3b82f6 !important; }
+            .status-badge-print { font-weight: bold; text-transform: uppercase; font-size: 9pt; }
+        }
+
         @media (max-width: 768px) {
             .table-wrapper {
                 overflow-x: auto !important;
                 padding-top: 40px;
-            }
-            .tooltip-content {
-                width: 200px;
-                left: 0;
-                transform: none;
-            }
-            .tooltip-content::after {
-                left: 20px;
             }
         }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-900">
 
-    <div class="max-w-6xl mx-auto p-4 md:p-8">
+    <div class="max-w-6xl mx-auto p-4 md:p-8 no-print">
         <!-- Header -->
         <header class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -133,6 +144,10 @@
 
                 <button onclick="exportCSV()" class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors shadow-sm text-sm font-medium">
                     <i data-lucide="download" size="18"></i> Eksporter CSV
+                </button>
+
+                <button onclick="generatePrintReport()" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md text-sm font-medium">
+                    <i data-lucide="printer" size="18"></i> Udskriv Rapport
                 </button>
             </div>
         </header>
@@ -178,33 +193,6 @@
             </div>
         </div>
 
-        <!-- Room Modal -->
-        <div id="room-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-                <h3 id="modal-title" class="text-lg font-bold mb-4">Navngiv nyt rum</h3>
-                <input type="text" id="new-room-input" placeholder="Navn på rum..." class="w-full border border-slate-200 rounded-lg px-4 py-2 mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
-                <div class="flex justify-end gap-2">
-                    <button onclick="closeRoomModal()" class="px-4 py-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">Annuller</button>
-                    <button onclick="confirmRoomAction()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Bekræft</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Delete Confirmation Modal -->
-        <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl text-center">
-                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="alert-circle"></i>
-                </div>
-                <h3 class="text-lg font-bold mb-2">Slet rum?</h3>
-                <p id="delete-modal-text" class="text-slate-500 text-sm mb-6">Dette vil slette rummet og alle tilhørende registreringer permanent.</p>
-                <div class="flex gap-2">
-                    <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">Annuller</button>
-                    <button id="confirm-delete-btn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Slet nu</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Tips Section -->
         <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
@@ -212,67 +200,87 @@
                     <i data-lucide="help-circle" size="16"></i> Tooltips
                 </h3>
                 <p class="text-xs text-blue-800 leading-relaxed">
-                    Hold musen over ⓘ for at få konkrete råd til, hvad du skal kigge efter. Det svarer til de kritiske punkter i en tilstandsrapport.
+                    Hold musen over ⓘ for at få råd til, hvad du skal kigge efter.
                 </p>
             </div>
             <div class="bg-green-50 p-4 rounded-xl border border-green-100">
                 <h3 class="font-semibold text-green-900 flex items-center gap-2 mb-2 text-sm">
-                    <i data-lucide="droplets" size="16"></i> Vådrumstjek
+                    <i data-lucide="printer" size="16"></i> Print Rapport
                 </h3>
                 <p class="text-xs text-green-800 leading-relaxed">
-                    Brug en glaskugle eller en lille mængde vand for at se, om gulvet hælder den rigtige vej mod afløbet i brusenichen.
+                    Tryk på knappen øverst for at få en samlet oversigt over alle rum klar til underskrift.
                 </p>
             </div>
             <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
                 <h3 class="font-semibold text-orange-900 flex items-center gap-2 mb-2 text-sm">
-                    <i data-lucide="thermometer" size="16"></i> Varme-tjek
+                    <i data-lucide="save" size="16"></i> Auto-gem
                 </h3>
                 <p class="text-xs text-orange-800 leading-relaxed">
-                    Skru helt op for varmen i alle rum og mærk efter en time, om alle gulve eller radiatorer bliver varme jævnt over det hele.
+                    Alt gemmes i din browser. Husk CSV-eksport som backup.
                 </p>
             </div>
         </div>
     </div>
 
+    <!-- Modals -->
+    <div id="room-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+        <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
+            <h3 id="modal-title" class="text-lg font-bold mb-4">Navngiv nyt rum</h3>
+            <input type="text" id="new-room-input" placeholder="Navn på rum..." class="w-full border border-slate-200 rounded-lg px-4 py-2 mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeRoomModal()" class="px-4 py-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">Annuller</button>
+                <button onclick="confirmRoomAction()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Bekræft</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+        <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl text-center">
+            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="alert-circle"></i>
+            </div>
+            <h3 class="text-lg font-bold mb-2">Slet rum?</h3>
+            <p id="delete-modal-text" class="text-slate-500 text-sm mb-6"></p>
+            <div class="flex gap-2">
+                <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">Annuller</button>
+                <button id="confirm-delete-btn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">Slet nu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Print Container -->
+    <div id="print-section"></div>
+
     <script>
-        // Data Configuration with Enhanced Tooltips (Condition Report Style)
+        // Configuration
         const initialDefaultRooms = ["Stue", "Køkken", "Soveværelse", "Badeværelse", "Gang", "Baggang", "Carport", "Skur", "Hus ude"];
-        
         const defaultCheckpoints = {
             "Generelt": [
-                { name: "Gulve", tip: "Tjek for knirken, løse brædder eller huller. Se efter 'slip' ved fodlisterne og om gulvet føles jævnt." },
-                { name: "Lofter", tip: "Se efter misfarvninger (fugt), skader eller ujævnheder. Svindrevner i samlinger tjekkes separat nedenfor." },
-                { name: "Vægge", tip: "Tjek overfladefinish og om de er lodrette. Se efter lunker (små buler/huller) i malerarbejdet." },
-                { name: "Svindrevner", tip: "Tjek hjørner, samlinger mellem væg/loft og over døre/vinduer. Meget almindeligt efter 1 år." },
-                { name: "Døre & Vinduer", tip: "Lukker de tæt? Tjek tætningslister. Se efter kondens indvendigt mellem ruderne (fejl i ruden)." },
-                { name: "Varme", tip: "Virker gulvvarme/radiatorer i alle zoner? Reagerer termostaten når du skruer op/ned?" },
-                { name: "Indeklima", tip: "Er der kondens på ruderne om morgenen? Tjek om ventiler er åbne og om ventilationen suser svagt." },
-                { name: "El-installationer", tip: "Sidder alle stikkontakter fast? Tjek dæksler og om alle udtag giver strøm." }
+                { name: "Gulve", tip: "Tjek for knirken, løse brædder eller huller. Se efter 'slip' ved fodlisterne." },
+                { name: "Lofter", tip: "Se efter pletter, skader eller ujævnheder i malingen." },
+                { name: "Vægge", tip: "Tjek overfladefinish og om de er lodrette." },
+                { name: "Svindrevner", tip: "Tjek hjørner, samlinger mellem væg/loft og over døre/vinduer." },
+                { name: "Døre & Vinduer", tip: "Binder de? Lukker de tæt? Tjek tætningslister." },
+                { name: "Varme", tip: "Virker gulvvarme/radiatorer? Reagerer termostaten?" },
+                { name: "Indeklima", tip: "Tjek for kondens på ruderne og om ventilationen kører." },
+                { name: "El-installationer", tip: "Sidder alle stikkontakter fast? Virker alle udtag?" }
             ],
             "Vådrum": [
-                { name: "Fuger", tip: "Kritisk: Tjek silikonefuger i brusenichen for slip. Selv et lille hul kan give fugtskader i væggen." },
-                { name: "Fald på gulv", tip: "Løber vandet mod afløbet? Tjek om der står vand tilbage på gulvet efter bad (lunker)." },
-                { name: "Afløb", tip: "Løber vandet hurtigt væk? Tjek under risten om der er byggeaffald eller meget snavs." },
-                { name: "Fliser", tip: "Bank let med knoerne på fliserne. Hvis det lyder 'hult', sidder flisen løs fra underlaget." },
-                { name: "Ventilation", tip: "Hold et stykke toiletpapir op mod udsugningen. Det skal kunne sidde fast af sig selv ved sugestyrken." },
-                { name: "Armaturer", tip: "Tjek vandtryk og om blandingsbatteriet reagerer hurtigt på temperaturændringer." }
+                { name: "Fuger", tip: "Tjek silikonefuger i brusenichen for slip. Meget kritisk." },
+                { name: "Fald på gulv", tip: "Løber vandet mod afløbet? Tjek for lunker." },
+                { name: "Afløb", tip: "Løber vandet hurtigt væk? Tjek for byggeaffald." },
+                { name: "Fliser", tip: "Bank på fliserne for at tjekke om de lyder hult (løse)." },
+                { name: "Ventilation", tip: "Tjek om udsugningen suger kraftigt nok." }
             ],
             "Køkken": [
-                { name: "Vand & Afløb", tip: "Kig ind i vaskeskabet med en lygte. Er der tegn på små dryp eller fugtringe på bunden af skabet?" },
-                { name: "Inventar", tip: "Tjek om låger og skuffer hænger lige. Lukker soft-close mekanismen jævnt i hele køkkenet?" },
-                { name: "Hvidevarer", tip: "Tjek emhættens sugestyrke og filter. Tjek om opvaskemaskinen er fastgjort korrekt." },
-                { name: "Bordplade", tip: "Tjek fugen mellem bordplade og væg. Se efter ridser, hakker eller opfugtning ved vasken." }
+                { name: "Vand & Afløb", tip: "Tjek for utætheder under vasken i skabet." },
+                { name: "Inventar", tip: "Tjek justering af låger/skuffer og soft-close." },
+                { name: "Bordplade", tip: "Tjek fuger ved vask og væg." }
             ],
             "Ude": [
-                { name: "Facader & Murværk", tip: "Tjek for revner i mursten eller fuger. Se især over vinduer og døre hvor spændingerne er størst." },
-                { name: "Tag & Tagrender", tip: "Er tagrenderne tætte i samlingerne? Tjek om nedløbsrør fører vandet helt ned i brønden." },
-                { name: "Sokkel", tip: "Se efter revner eller afskalninger. Sokkelpudsen skal være intakt hele vejen rundt." },
-                { name: "Vandafledning", tip: "Vigtigt: Hælder terrassen eller jorden væk fra huset? Vand må aldrig samle sig mod soklen." },
-                { name: "Udhæng & Træværk", tip: "Tjek for begyndende råd eller revner i malingen. Er alt træværk dækket jævnt?" }
-            ],
-            "Baggang": [
-                { name: "Tekniske inst.", tip: "Kig på varmepumpen/fyret. Er der fejlmeddelelser? Tjek for utætheder ved rørforbindelser." },
-                { name: "Vaskeinstallation", tip: "Tjek afløb til vaskemaskine og om vandhanen til maskinen er tæt." }
+                { name: "Murværk", tip: "Tjek for revner i mursten eller fuger." },
+                { name: "Tag & Render", tip: "Er tagrenderne tætte og har de fald?" },
+                { name: "Vandafledning", tip: "Hælder terrassen/jorden væk fra huset?" }
             ]
         };
 
@@ -283,10 +291,9 @@
         let resetConfirmState = false;
         let roomToCopy = null;
         let roomToDelete = null;
-        const STORAGE_OBS_KEY = 'hus_gennemgang_data_v4'; // New version
+        const STORAGE_OBS_KEY = 'hus_gennemgang_data_v4';
         const STORAGE_ROOMS_KEY = 'hus_gennemgang_rooms_v4';
 
-        // Initialize
         function init() {
             const savedRooms = localStorage.getItem(STORAGE_ROOMS_KEY);
             const savedObs = localStorage.getItem(STORAGE_OBS_KEY);
@@ -309,13 +316,7 @@
                 const r = room.toLowerCase();
                 if (r.includes("badeværelse") || r.includes("toilet")) checks = [...checks, ...defaultCheckpoints["Vådrum"]];
                 if (r === "køkken") checks = [...checks, ...defaultCheckpoints["Køkken"]];
-                if (r === "baggang" || r === "bryggers") checks = [...checks, ...defaultCheckpoints["Baggang"]];
                 if (r === "hus ude") checks = defaultCheckpoints["Ude"];
-                if (r === "carport" || r === "skur") checks = [
-                    { name: "Tagtæthed", tip: "Tjek for fugtskjolder på undersiden af taget eller på stolperne." },
-                    { name: "Fundament", tip: "Tjek om stolperne sidder fast eller om belægningen er sunket omkring dem." },
-                    { name: "Maling/Finish", tip: "Har træet fået nok beskyttelse? Tjek samlinger for gab." }
-                ];
                 checks.forEach(check => {
                     observations.push({ id: Math.random().toString(36).substr(2, 9), room, item: check.name, tip: check.tip || "", description: "", status: "Ikke tjekket" });
                 });
@@ -328,7 +329,6 @@
             localStorage.setItem(STORAGE_ROOMS_KEY, JSON.stringify(rooms));
         }
 
-        // Render
         function render() {
             renderNavigation();
             renderTable();
@@ -337,55 +337,41 @@
 
         function renderNavigation() {
             const nav = document.getElementById('room-nav');
-            nav.innerHTML = rooms.map(room => {
-                const isActive = activeRoom === room;
-                return `
+            nav.innerHTML = rooms.map(room => `
                 <div class="room-item relative flex-none flex items-center rounded-full transition-all border ${
-                    isActive ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
+                    activeRoom === room ? "bg-blue-600 text-white border-blue-600 shadow-md pr-4" : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 pr-4"
                 }">
                     <button onclick="setActiveRoom('${room}')" class="pl-4 py-2 pr-2 text-sm font-medium whitespace-nowrap focus:outline-none">
                         ${room}
                     </button>
                     <div class="room-actions flex items-center pr-2 gap-1">
-                        <button onclick="openRoomModal('${room}')" class="p-1 rounded-full hover:bg-black/10 transition-colors" title="Kopiér">
-                            <i data-lucide="copy" size="14"></i>
-                        </button>
-                        <button onclick="openDeleteModal('${room}')" class="p-1 rounded-full hover:bg-black/10 transition-colors" title="Slet">
-                            <i data-lucide="x" size="14"></i>
-                        </button>
+                        <button onclick="openRoomModal('${room}')" class="p-1 rounded-full hover:bg-black/10 transition-colors"><i data-lucide="copy" size="14"></i></button>
+                        <button onclick="openDeleteModal('${room}')" class="p-1 rounded-full hover:bg-black/10 transition-colors"><i data-lucide="x" size="14"></i></button>
                     </div>
                 </div>
-                `;
-            }).join('');
+            `).join('');
         }
 
         function renderTable() {
             const tbody = document.getElementById('table-body');
-            const emptyState = document.getElementById('empty-state');
             document.getElementById('active-room-title').innerText = activeRoom || "Vælg et rum";
-            
             const filtered = observations.filter(obs => obs.room === activeRoom);
             if (filtered.length === 0 || !activeRoom) {
                 tbody.innerHTML = '';
-                emptyState.classList.remove('hidden');
+                document.getElementById('empty-state').classList.remove('hidden');
             } else {
-                emptyState.classList.add('hidden');
+                document.getElementById('empty-state').classList.add('hidden');
                 tbody.innerHTML = filtered.map(obs => `
-                    <tr class="hover:bg-slate-50 transition-colors">
+                    <tr>
                         <td class="px-6 py-4 flex items-center gap-2">
-                            <input type="text" value="${obs.item}" onchange="updateRow('${obs.id}', 'item', this.value)" class="bg-transparent border-none font-medium text-slate-800 text-sm focus:bg-white focus:ring-1 focus:ring-blue-100 rounded px-1">
-                            ${obs.tip ? `
-                                <div class="tooltip-container">
-                                    <i data-lucide="info" size="14" class="text-slate-400 cursor-help"></i>
-                                    <div class="tooltip-content">${obs.tip}</div>
-                                </div>
-                            ` : ''}
+                            <input type="text" value="${obs.item}" onchange="updateRow('${obs.id}', 'item', this.value)" class="bg-transparent border-none font-medium text-slate-800 text-sm focus:bg-white rounded px-1">
+                            ${obs.tip ? `<div class="tooltip-container"><i data-lucide="info" size="14" class="text-slate-400"></i><div class="tooltip-content">${obs.tip}</div></div>` : ''}
                         </td>
                         <td class="px-6 py-4">
-                            <textarea oninput="autoResize(this)" onchange="updateRow('${obs.id}', 'description', this.value)" placeholder="Noter fund..." class="w-full bg-transparent border-none text-slate-600 text-sm resize-none overflow-hidden focus:bg-white focus:ring-1 focus:ring-blue-100 rounded p-1" rows="1">${obs.description}</textarea>
+                            <textarea oninput="autoResize(this)" onchange="updateRow('${obs.id}', 'description', this.value)" placeholder="Noter fund..." class="w-full bg-transparent border-none text-slate-600 text-sm resize-none overflow-hidden focus:bg-white rounded p-1" rows="1">${obs.description}</textarea>
                         </td>
                         <td class="px-6 py-4">
-                            <select onchange="updateRow('${obs.id}', 'status', this.value)" class="text-xs font-semibold rounded-full px-3 py-1 border outline-none cursor-pointer ${getStatusStyles(obs.status)}">
+                            <select onchange="updateRow('${obs.id}', 'status', this.value)" class="text-xs font-semibold rounded-full px-3 py-1 border outline-none ${getStatusStyles(obs.status)}">
                                 <option value="Ikke tjekket" ${obs.status === 'Ikke tjekket' ? 'selected' : ''}>Ikke tjekket</option>
                                 <option value="OK" ${obs.status === 'OK' ? 'selected' : ''}>OK</option>
                                 <option value="Fejl fundet" ${obs.status === 'Fejl fundet' ? 'selected' : ''}>Fejl fundet</option>
@@ -393,7 +379,7 @@
                             </select>
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <button onclick="deleteRow('${obs.id}')" class="text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="trash-2" size="18"></i></button>
+                            <button onclick="deleteRow('${obs.id}')" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" size="18"></i></button>
                         </td>
                     </tr>
                 `).join('');
@@ -401,93 +387,73 @@
             }
         }
 
-        // Helper functions
-        function autoResize(el) {
-            el.style.height = 'auto';
-            el.style.height = el.scrollHeight + 'px';
+        function generatePrintReport() {
+            const printSection = document.getElementById('print-section');
+            const now = new Date().toLocaleDateString('da-DK');
+            let html = `<div style="padding: 40px; font-family: sans-serif;">
+                <h1 style="border-bottom: 2px solid #000; padding-bottom: 10px;">1-års Gennemgangsrapport</h1>
+                <p><strong>Dato:</strong> ${now}</p>`;
+
+            rooms.forEach(room => {
+                const roomObs = observations.filter(o => o.room === room);
+                if (roomObs.length > 0) {
+                    html += `<h2>${room}</h2><table style="width:100%; border-collapse:collapse; margin-bottom: 20px;">
+                        <thead><tr style="background:#f1f5f9;">
+                            <th style="border:1px solid #ccc; padding:8px; width:25%;">Emne</th>
+                            <th style="border:1px solid #ccc; padding:8px; width:55%;">Observation</th>
+                            <th style="border:1px solid #ccc; padding:8px; width:20%;">Status</th>
+                        </tr></thead><tbody>`;
+                    roomObs.forEach(obs => {
+                        html += `<tr>
+                            <td style="border:1px solid #ccc; padding:8px;">${obs.item}</td>
+                            <td style="border:1px solid #ccc; padding:8px;">${obs.description || '-'}</td>
+                            <td style="border:1px solid #ccc; padding:8px; text-align:center;">${obs.status}</td>
+                        </tr>`;
+                    });
+                    html += `</tbody></table>`;
+                }
+            });
+
+            html += `<div style="margin-top:50px; display:flex; justify-content:space-between;">
+                <div style="border-top:1px solid #000; width:40%; padding-top:10px;">Bygherre (Underskrift)</div>
+                <div style="border-top:1px solid #000; width:40%; padding-top:10px;">Entreprenør (Underskrift)</div>
+            </div></div>`;
+
+            printSection.innerHTML = html;
+            
+            // Brug en lille delay for at sikre rendering før print
+            setTimeout(() => {
+                window.print();
+            }, 500);
         }
 
-        function setActiveRoom(room) { activeRoom = room; render(); }
-
-        function openRoomModal(source = null) {
-            roomToCopy = source;
-            document.getElementById('modal-title').innerText = source ? `Kopiér "${source}"` : "Tilføj nyt rum";
-            document.getElementById('new-room-input').value = source ? `${source} (kopi)` : "";
-            document.getElementById('room-modal').classList.remove('hidden');
-            document.getElementById('new-room-input').focus();
-        }
-
-        function closeRoomModal() { document.getElementById('room-modal').classList.add('hidden'); roomToCopy = null; }
-
-        function confirmRoomAction() {
-            const name = document.getElementById('new-room-input').value.trim();
-            if (!name || rooms.includes(name)) return;
-            rooms.push(name);
-            if (roomToCopy) {
-                observations.filter(o => o.room === roomToCopy).forEach(o => {
-                    observations.push({ id: Math.random().toString(36).substr(2, 9), room: name, item: o.item, tip: o.tip, description: "", status: "Ikke tjekket" });
-                });
-            }
-            activeRoom = name;
-            saveData(); closeRoomModal(); render();
-        }
-
-        function openDeleteModal(room) {
-            roomToDelete = room;
-            document.getElementById('delete-modal').classList.remove('hidden');
-            document.getElementById('confirm-delete-btn').onclick = confirmDeleteRoom;
-        }
-
-        function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); roomToDelete = null; }
-
-        function confirmDeleteRoom() {
-            if (!roomToDelete) return;
-            rooms = rooms.filter(r => r !== roomToDelete);
-            observations = observations.filter(o => o.room !== roomToDelete);
-            if (activeRoom === roomToDelete) activeRoom = rooms[0] || "";
-            saveData(); closeDeleteModal(); render();
-        }
-
-        function updateRow(id, field, value) {
-            const idx = observations.findIndex(o => o.id === id);
-            if (idx !== -1) { observations[idx][field] = value; saveData(); if (field === 'status') render(); }
-        }
-
-        function addNewRow() {
-            if (!activeRoom) return;
-            observations.push({ id: Math.random().toString(36).substr(2, 9), room: activeRoom, item: "Nyt emne", tip: "", description: "", status: "Ikke tjekket" });
-            saveData(); render();
-        }
-
+        function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+        function setActiveRoom(r) { activeRoom = r; render(); }
+        function openRoomModal(s = null) { roomToCopy = s; document.getElementById('modal-title').innerText = s ? `Kopiér "${s}"` : "Tilføj rum"; document.getElementById('new-room-input').value = s ? `${s} (kopi)` : ""; document.getElementById('room-modal').classList.remove('hidden'); document.getElementById('new-room-input').focus(); }
+        function closeRoomModal() { document.getElementById('room-modal').classList.add('hidden'); }
+        function confirmRoomAction() { const n = document.getElementById('new-room-input').value.trim(); if (!n || rooms.includes(n)) return; rooms.push(n); if (roomToCopy) observations.filter(o => o.room === roomToCopy).forEach(o => { observations.push({ id: Math.random().toString(36).substr(2, 9), room: n, item: o.item, tip: o.tip, description: "", status: "Ikke tjekket" }); }); activeRoom = n; saveData(); closeRoomModal(); render(); }
+        function openDeleteModal(r) { roomToDelete = r; document.getElementById('delete-modal-text').innerText = `Slet "${r}"?`; document.getElementById('delete-modal').classList.remove('hidden'); }
+        function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); }
+        function confirmDeleteRoom() { if (!roomToDelete) return; rooms = rooms.filter(r => r !== roomToDelete); observations = observations.filter(o => o.room !== roomToDelete); if (activeRoom === roomToDelete) activeRoom = rooms[0] || ""; saveData(); closeDeleteModal(); render(); }
+        function updateRow(id, f, v) { const idx = observations.findIndex(o => o.id === id); if (idx !== -1) { observations[idx][f] = v; saveData(); if (f === 'status') render(); } }
+        function addNewRow() { if (!activeRoom) return; observations.push({ id: Math.random().toString(36).substr(2, 9), room: activeRoom, item: "Nyt emne", tip: "", description: "", status: "Ikke tjekket" }); saveData(); render(); }
         function deleteRow(id) { observations = observations.filter(o => o.id !== id); saveData(); render(); }
-
-        function handleReset() {
-            const btn = document.getElementById('reset-btn');
-            const txt = document.getElementById('reset-text');
-            if (!resetConfirmState) {
-                resetConfirmState = true; txt.innerText = "Sikker? Klik igen"; btn.classList.add('bg-red-600', 'text-white');
-                setTimeout(() => { resetConfirmState = false; txt.innerText = "Nulstil alt"; btn.classList.remove('bg-red-600', 'text-white'); }, 3000);
-            } else { localStorage.clear(); loadDefaults(); render(); resetConfirmState = false; }
-        }
-
+        function handleReset() { if (!resetConfirmState) { resetConfirmState = true; document.getElementById('reset-text').innerText = "Sikker?"; setTimeout(() => { resetConfirmState = false; document.getElementById('reset-text').innerText = "Nulstil alt"; }, 3000); } else { localStorage.clear(); loadDefaults(); render(); resetConfirmState = false; } }
         function getStatusStyles(s) {
             if (s === "OK") return "bg-green-100 text-green-800 border-green-200";
             if (s === "Fejl fundet") return "bg-red-100 text-red-800 border-red-200";
             if (s === "Vurdering ønskes") return "bg-yellow-100 text-yellow-800 border-yellow-200";
             return "bg-gray-100 text-slate-600 border-slate-200";
         }
-
         function exportCSV() {
-            const headers = ["Rum", "Emne", "Beskrivelse", "Status"];
-            const rows = observations.map(o => [o.room, o.item.replace(/"/g, '""'), o.description.replace(/"/g, '""'), o.status]);
-            let csv = "\uFEFF" + headers.join(";") + "\n" + rows.map(r => r.map(c => `"${c}"`).join(";")).join("\n");
+            const h = ["Rum", "Emne", "Beskrivelse", "Status"];
+            const r = observations.map(o => [o.room, o.item.replace(/"/g, '""'), o.description.replace(/"/g, '""'), o.status]);
+            let csv = "\uFEFF" + h.join(";") + "\n" + r.map(row => row.map(c => `"${c}"`).join(";")).join("\n");
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob); link.download = "gennemgang_hus.csv"; link.click();
+            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "gennemgang.csv"; link.click();
         }
-
         function importCSV(e) {
-            const file = e.target.files[0]; if (!file) return;
+            const f = e.target.files[0]; if (!f) return;
             const reader = new FileReader();
             reader.onload = function(ev) {
                 let content = ev.target.result; if (content.startsWith('\uFEFF')) content = content.substring(1);
@@ -495,20 +461,13 @@
                 const newObs = []; const foundRooms = new Set();
                 for (let i = 1; i < lines.length; i++) {
                     const parts = lines[i].split(';').map(p => p.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
-                    if (parts.length >= 4) { 
-                        let tip = "";
-                        Object.values(defaultCheckpoints).flat().forEach(def => {
-                            if (def.name === parts[1]) tip = def.tip;
-                        });
-                        newObs.push({ id: Math.random().toString(36).substr(2, 9), room: parts[0], item: parts[1], tip, description: parts[2], status: parts[3] }); 
-                        foundRooms.add(parts[0]); 
-                    }
+                    if (parts.length >= 4) { newObs.push({ id: Math.random().toString(36).substr(2, 9), room: parts[0], item: parts[1], tip: "", description: parts[2], status: parts[3] }); foundRooms.add(parts[0]); }
                 }
                 if (newObs.length > 0) { observations = newObs; rooms = Array.from(foundRooms); activeRoom = rooms[0] || ""; saveData(); render(); }
             };
-            reader.readAsText(file);
+            reader.readAsText(f);
         }
-
+        document.getElementById('confirm-delete-btn').onclick = confirmDeleteRoom;
         window.onload = init;
     </script>
 </body>
