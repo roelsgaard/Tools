@@ -107,10 +107,21 @@
             .content-card { border: none !important; box-shadow: none !important; }
             table { border-collapse: collapse !important; width: 100% !important; margin-bottom: 20px; }
             td, th { border: 1px solid #cbd5e1 !important; padding: 10px !important; text-align: left; vertical-align: top; }
-            th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; }
+            th { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             h1 { font-size: 24pt !important; margin-bottom: 20px !important; }
-            h2 { font-size: 16pt !important; margin-top: 30px !important; padding: 8px !important; background: #e2e8f0 !important; -webkit-print-color-adjust: exact; border-left: 6px solid #3b82f6 !important; }
-            .status-badge-print { font-weight: bold; text-transform: uppercase; font-size: 9pt; }
+            h2 { font-size: 16pt !important; margin-top: 30px !important; padding: 8px !important; background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-left: 6px solid #3b82f6 !important; }
+            
+            /* Print Status Badges */
+            .status-badge-print {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 9999px;
+                font-size: 9pt;
+                font-weight: 600;
+                text-transform: uppercase;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
 
         @media (max-width: 768px) {
@@ -208,7 +219,7 @@
                     <i data-lucide="printer" size="16"></i> Print Rapport
                 </h3>
                 <p class="text-xs text-green-800 leading-relaxed">
-                    Tryk på knappen øverst for at få en samlet oversigt over alle rum klar til underskrift.
+                    Tryk på knappen øverst for at få en samlet oversigt over alle rum klar til din gennemgang.
                 </p>
             </div>
             <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
@@ -256,31 +267,39 @@
         const initialDefaultRooms = ["Stue", "Køkken", "Soveværelse", "Badeværelse", "Gang", "Baggang", "Carport", "Skur", "Hus ude"];
         const defaultCheckpoints = {
             "Generelt": [
-                { name: "Gulve", tip: "Tjek for knirken, løse brædder eller huller. Se efter 'slip' ved fodlisterne." },
-                { name: "Lofter", tip: "Se efter pletter, skader eller ujævnheder i malingen." },
-                { name: "Vægge", tip: "Tjek overfladefinish og om de er lodrette." },
-                { name: "Svindrevner", tip: "Tjek hjørner, samlinger mellem væg/loft og over døre/vinduer." },
-                { name: "Døre & Vinduer", tip: "Binder de? Lukker de tæt? Tjek tætningslister." },
-                { name: "Varme", tip: "Virker gulvvarme/radiatorer? Reagerer termostaten?" },
-                { name: "Indeklima", tip: "Tjek for kondens på ruderne og om ventilationen kører." },
-                { name: "El-installationer", tip: "Sidder alle stikkontakter fast? Virker alle udtag?" }
+                { name: "Gulve", tip: "Tjek for knirken, løse brædder eller huller. Se efter 'slip' ved fodlisterne og om gulvet føles jævnt." },
+                { name: "Lofter", tip: "Se efter pletter, skader eller ujævnheder i malingen. Tjek finish i hjørner." },
+                { name: "Vægge", tip: "Tjek overfladefinish, buler og om de er lodrette. Se efter lunker (små buler/huller) i malerarbejdet." },
+                { name: "Svindrevner", tip: "Tjek hjørner, samlinger mellem væg/loft og over døre/vinduer. Meget almindeligt efter 1 år." },
+                { name: "Døre & Vinduer", tip: "Lukker de tæt? Tjek tætningslister. Se efter kondens indvendigt mellem ruderne (fejl i ruden)." },
+                { name: "Varme", tip: "Virker gulvvarme/radiatorer i alle zoner? Reagerer termostaten når du skruer op/ned?" },
+                { name: "Indeklima", tip: "Er der kondens på ruderne om morgenen? Tjek om ventiler er åbne og om ventilationen suser svagt." },
+                { name: "El-installationer", tip: "Sidder alle stikkontakter fast? Virker alt lys og alle udtag? Tjek for dæksler." }
             ],
             "Vådrum": [
-                { name: "Fuger", tip: "Tjek silikonefuger i brusenichen for slip. Meget kritisk." },
-                { name: "Fald på gulv", tip: "Løber vandet mod afløbet? Tjek for lunker." },
-                { name: "Afløb", tip: "Løber vandet hurtigt væk? Tjek for byggeaffald." },
-                { name: "Fliser", tip: "Bank på fliserne for at tjekke om de lyder hult (løse)." },
-                { name: "Ventilation", tip: "Tjek om udsugningen suger kraftigt nok." }
+                { name: "Fuger", tip: "Kritisk: Tjek silikonefuger i brusenichen for slip. Selv et lille hul kan give fugtskader i væggen." },
+                { name: "Fald på gulv", tip: "Løber vandet mod afløbet? Tjek om der står vand tilbage på gulvet efter bad (lunker)." },
+                { name: "Afløb", tip: "Løber vandet hurtigt væk? Tjek under risten om der er byggeaffald eller meget snavs." },
+                { name: "Fliser", tip: "Bank let med knoerne på fliserne. Hvis det lyder 'hult', sidder flisen løs fra underlaget." },
+                { name: "Ventilation", tip: "Hold et stykke toiletpapir op mod udsugningen. Det skal kunne sidde fast af sig selv ved sugestyrken." },
+                { name: "Armaturer", tip: "Tjek vandtryk og om blandingsbatteriet reagerer hurtigt på temperaturændringer." }
             ],
             "Køkken": [
-                { name: "Vand & Afløb", tip: "Tjek for utætheder under vasken i skabet." },
-                { name: "Inventar", tip: "Tjek justering af låger/skuffer og soft-close." },
-                { name: "Bordplade", tip: "Tjek fuger ved vask og væg." }
+                { name: "Vand & Afløb", tip: "Kig ind i vaskeskabet med en lygte. Er der tegn på små dryp eller fugtringe på bunden af skabet?" },
+                { name: "Inventar", tip: "Tjek om låger og skuffer hænger lige. Lukker soft-close mekanismen jævnt i hele køkkenet?" },
+                { name: "Hvidevarer", tip: "Tjek emhættens sugestyrke og filter. Tjek om opvaskemaskinen er fastgjort korrekt." },
+                { name: "Bordplade", tip: "Tjek fuger ved vask og væg. Se efter ridser, hakker eller opfugtning ved vasken." }
             ],
             "Ude": [
-                { name: "Murværk", tip: "Tjek for revner i mursten eller fuger." },
-                { name: "Tag & Render", tip: "Er tagrenderne tætte og har de fald?" },
-                { name: "Vandafledning", tip: "Hælder terrassen/jorden væk fra huset?" }
+                { name: "Facader & Murværk", tip: "Tjek for revner i mursten eller fuger. Se især over vinduer og døre hvor spændingerne er størst." },
+                { name: "Tag & Tagrender", tip: "Er tagrenderne tætte i samlingerne? Tjek om nedløbsrør fører vandet helt ned i brønden." },
+                { name: "Sokkel", tip: "Se efter revner eller afskalninger. Sokkelpudsen skal være intakt hele vejen rundt." },
+                { name: "Vandafledning", tip: "Vigtigt: Hælder terrassen eller jorden væk fra huset? Vand må aldrig samle sig mod soklen." },
+                { name: "Udhæng & Træværk", tip: "Tjek for begyndende råd eller revner i malingen. Er alt træværk dækket jævnt?" }
+            ],
+            "Baggang": [
+                { name: "Tekniske inst.", tip: "Kig på varmepumpen/fyret. Er der fejlmeddelelser? Tjek for utætheder ved rørforbindelser." },
+                { name: "Vaskeinstallation", tip: "Tjek afløb til vaskemaskine og om vandhanen til maskinen er tæt." }
             ]
         };
 
@@ -316,6 +335,7 @@
                 const r = room.toLowerCase();
                 if (r.includes("badeværelse") || r.includes("toilet")) checks = [...checks, ...defaultCheckpoints["Vådrum"]];
                 if (r === "køkken") checks = [...checks, ...defaultCheckpoints["Køkken"]];
+                if (r === "baggang" || r === "bryggers") checks = [...checks, ...defaultCheckpoints["Baggang"]];
                 if (r === "hus ude") checks = defaultCheckpoints["Ude"];
                 checks.forEach(check => {
                     observations.push({ id: Math.random().toString(36).substr(2, 9), room, item: check.name, tip: check.tip || "", description: "", status: "Ikke tjekket" });
@@ -387,37 +407,59 @@
             }
         }
 
+        function getPrintStatusStyle(status) {
+            // Mapping status to inline print styles for the rapport
+            switch(status) {
+                case "OK": return "background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0;";
+                case "Fejl fundet": return "background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca;";
+                case "Vurdering ønskes": return "background-color: #fef9c3; color: #854d0e; border: 1px solid #fef08a;";
+                default: return "background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;";
+            }
+        }
+
         function generatePrintReport() {
             const printSection = document.getElementById('print-section');
             const now = new Date().toLocaleDateString('da-DK');
-            let html = `<div style="padding: 40px; font-family: sans-serif;">
-                <h1 style="border-bottom: 2px solid #000; padding-bottom: 10px;">1-års Gennemgangsrapport</h1>
-                <p><strong>Dato:</strong> ${now}</p>`;
+            
+            let html = `
+                <div style="padding: 20px; font-family: sans-serif;">
+                    <h1 style="border-bottom: 2px solid #1e293b; padding-bottom: 10px; margin-bottom: 5px;">1-års Gennemgangsrapport</h1>
+                    <p style="color: #64748b; margin-bottom: 30px;">Dato for udskrift: ${now}</p>
+            `;
 
             rooms.forEach(room => {
                 const roomObs = observations.filter(o => o.room === room);
                 if (roomObs.length > 0) {
-                    html += `<h2>${room}</h2><table style="width:100%; border-collapse:collapse; margin-bottom: 20px;">
-                        <thead><tr style="background:#f1f5f9;">
-                            <th style="border:1px solid #ccc; padding:8px; width:25%;">Emne</th>
-                            <th style="border:1px solid #ccc; padding:8px; width:55%;">Observation</th>
-                            <th style="border:1px solid #ccc; padding:8px; width:20%;">Status</th>
-                        </tr></thead><tbody>`;
+                    html += `
+                        <h2 style="background: #f1f5f9; padding: 10px; border-left: 6px solid #3b82f6; margin-top: 30px;">${room}</h2>
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px;">
+                            <thead>
+                                <tr style="background-color: #f8fafc;">
+                                    <th style="border: 1px solid #cbd5e1; padding: 10px; width: 25%; text-align: left; font-size: 10pt;">EMNE</th>
+                                    <th style="border: 1px solid #cbd5e1; padding: 10px; width: 55%; text-align: left; font-size: 10pt;">OBSERVATION</th>
+                                    <th style="border: 1px solid #cbd5e1; padding: 10px; width: 20%; text-align: center; font-size: 10pt;">STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                    
                     roomObs.forEach(obs => {
-                        html += `<tr>
-                            <td style="border:1px solid #ccc; padding:8px;">${obs.item}</td>
-                            <td style="border:1px solid #ccc; padding:8px;">${obs.description || '-'}</td>
-                            <td style="border:1px solid #ccc; padding:8px; text-align:center;">${obs.status}</td>
-                        </tr>`;
+                        html += `
+                            <tr>
+                                <td style="border: 1px solid #cbd5e1; padding: 10px; font-weight: bold; font-size: 10pt;">${obs.item}</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 10px; font-size: 10pt;">${obs.description || '-'}</td>
+                                <td style="border: 1px solid #cbd5e1; padding: 10px; text-align: center;">
+                                    <span class="status-badge-print" style="${getPrintStatusStyle(obs.status)} padding: 4px 10px; border-radius: 99px;">
+                                        ${obs.status}
+                                    </span>
+                                </td>
+                            </tr>`;
                     });
+                    
                     html += `</tbody></table>`;
                 }
             });
 
-            html += `<div style="margin-top:50px; display:flex; justify-content:space-between;">
-                <div style="border-top:1px solid #000; width:40%; padding-top:10px;">Bygherre (Underskrift)</div>
-                <div style="border-top:1px solid #000; width:40%; padding-top:10px;">Entreprenør (Underskrift)</div>
-            </div></div>`;
+            html += `</div>`;
 
             printSection.innerHTML = html;
             
@@ -432,7 +474,7 @@
         function openRoomModal(s = null) { roomToCopy = s; document.getElementById('modal-title').innerText = s ? `Kopiér "${s}"` : "Tilføj rum"; document.getElementById('new-room-input').value = s ? `${s} (kopi)` : ""; document.getElementById('room-modal').classList.remove('hidden'); document.getElementById('new-room-input').focus(); }
         function closeRoomModal() { document.getElementById('room-modal').classList.add('hidden'); }
         function confirmRoomAction() { const n = document.getElementById('new-room-input').value.trim(); if (!n || rooms.includes(n)) return; rooms.push(n); if (roomToCopy) observations.filter(o => o.room === roomToCopy).forEach(o => { observations.push({ id: Math.random().toString(36).substr(2, 9), room: n, item: o.item, tip: o.tip, description: "", status: "Ikke tjekket" }); }); activeRoom = n; saveData(); closeRoomModal(); render(); }
-        function openDeleteModal(r) { roomToDelete = r; document.getElementById('delete-modal-text').innerText = `Slet "${r}"?`; document.getElementById('delete-modal').classList.remove('hidden'); }
+        function openDeleteModal(r) { roomToDelete = r; document.getElementById('delete-modal-text').innerText = `Er du sikker på at du vil slette "${r}"?`; document.getElementById('delete-modal').classList.remove('hidden'); }
         function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); }
         function confirmDeleteRoom() { if (!roomToDelete) return; rooms = rooms.filter(r => r !== roomToDelete); observations = observations.filter(o => o.room !== roomToDelete); if (activeRoom === roomToDelete) activeRoom = rooms[0] || ""; saveData(); closeDeleteModal(); render(); }
         function updateRow(id, f, v) { const idx = observations.findIndex(o => o.id === id); if (idx !== -1) { observations[idx][f] = v; saveData(); if (f === 'status') render(); } }
