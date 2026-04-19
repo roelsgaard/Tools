@@ -23,7 +23,10 @@
                 </h1>
                 <p class="text-slate-500">Registrering af fejl og mangler ved dit nybyggede hus</p>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
+                <button id="reset-btn" onclick="handleReset()" class="flex items-center gap-2 bg-white border border-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors shadow-sm text-sm font-medium">
+                    <i data-lucide="rotate-ccw" size="18"></i> <span id="reset-text">Nulstil alt</span>
+                </button>
                 <button onclick="exportCSV()" class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors shadow-sm text-sm font-medium">
                     <i data-lucide="download" size="18"></i> Eksporter til Google Sheets (CSV)
                 </button>
@@ -134,9 +137,27 @@
         // State Management
         let observations = [];
         let activeRoom = rooms[0];
+        let resetConfirmState = false;
+        const STORAGE_KEY = 'hus_gennemgang_data_v1';
 
         // Initialize Data
         function init() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            
+            if (savedData) {
+                try {
+                    observations = JSON.parse(savedData);
+                } catch (e) {
+                    console.error("Fejl ved indlæsning af gemte data", e);
+                    loadDefaults();
+                }
+            } else {
+                loadDefaults();
+            }
+            render();
+        }
+
+        function loadDefaults() {
             const data = [];
             rooms.forEach(room => {
                 let checks = [...defaultCheckpoints["Generelt"]];
@@ -159,7 +180,11 @@
                 });
             });
             observations = data;
-            render();
+            saveData();
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(observations));
         }
 
         // Render Functions
@@ -226,6 +251,15 @@
                         </td>
                     </tr>
                 `).join('');
+                
+                // Trigger auto-resize for existing textareas
+                setTimeout(() => {
+                    const textareas = tbody.querySelectorAll('textarea');
+                    textareas.forEach(ta => {
+                        ta.style.height = '';
+                        ta.style.height = ta.scrollHeight + 'px';
+                    });
+                }, 0);
             }
         }
 
@@ -239,6 +273,8 @@
             const index = observations.findIndex(o => o.id === id);
             if (index !== -1) {
                 observations[index][field] = value;
+                saveData();
+                if (field === 'status') render(); // Re-render to update styles if status changed
             }
         }
 
@@ -251,12 +287,38 @@
                 description: "",
                 status: "Ikke tjekket"
             });
+            saveData();
             render();
         }
 
         function deleteRow(id) {
             observations = observations.filter(o => o.id !== id);
+            saveData();
             render();
+        }
+
+        function handleReset() {
+            const btn = document.getElementById('reset-btn');
+            const text = document.getElementById('reset-text');
+            
+            if (!resetConfirmState) {
+                resetConfirmState = true;
+                text.innerText = "Sikker? Klik igen for at slette alt";
+                btn.classList.add('bg-red-600', 'text-white');
+                btn.classList.remove('bg-white', 'text-red-600');
+                
+                setTimeout(() => {
+                    resetConfirmState = false;
+                    text.innerText = "Nulstil alt";
+                    btn.classList.remove('bg-red-600', 'text-white');
+                    btn.classList.add('bg-white', 'text-red-600');
+                }, 3000);
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+                resetConfirmState = false;
+                loadDefaults();
+                render();
+            }
         }
 
         function getStatusStyles(status) {
