@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Management Cargo Carrier - Workload Visualization</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    /* Timeline range track styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+      margin-top: -6px;
+      border: 2px solid #0f172a;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      cursor: pointer;
+      background: #334155;
+      border-radius: 4px;
+    }
+    /* Modal smooth appearance */
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
+
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30 px-4 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-xl font-bold">
+        🚢
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base font-bold tracking-tight text-white">CargoOps</h1>
+          <span class="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800">Management Load</span>
+        </div>
+        <p class="text-xs text-slate-400">Visualizing team capacity & leadership workload through harbor shipping</p>
+      </div>
+    </div>
+
+    <!-- Quick Metrics HUD & Header Actions -->
+    <div class="flex items-center flex-wrap gap-2 sm:gap-4 text-xs">
+      <!-- Active / Capacity Counter Badge -->
+      <div class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-400">Onboard:</span>
+        <span id="statOnboardCount" class="font-bold text-white font-mono-num">0</span>
+        <span class="text-slate-500">/</span>
+        <button id="btnEditCapacityHeader" class="text-slate-300 hover:text-cyan-300 font-mono-num font-semibold flex items-center gap-1 group transition" title="Adjust slot capacity">
+          <span id="statCapacityMax">20 slots</span>
+          <svg class="w-3 h-3 text-slate-500 group-hover:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        </button>
+      </div>
+
+      <!-- Draft Status -->
+      <div class="hidden sm:flex bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 items-center gap-2">
+        <span class="text-slate-400">Hull Draft:</span>
+        <span id="statDraftLoad" class="font-bold text-cyan-400 font-mono-num">Optimal (0%)</span>
+      </div>
+
+      <!-- Header Action Buttons -->
+      <button id="btnOpenCategoryModal" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition flex items-center gap-1.5 font-medium">
+        <span>🎨</span>
+        <span>Categories</span>
+      </button>
+
+      <button id="btnOpenNewTaskModal" class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-md shadow-cyan-600/30 transition flex items-center gap-1.5 active:scale-95">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <span>Add Cargo</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 p-3 sm:p-5 lg:p-6 max-w-7xl mx-auto w-full flex flex-col gap-5">
+    
+    <!-- Top Row: Interactive Canvas Viewport & Capacity Panel -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      
+      <!-- Canvas Card: Container Ship & Crane Simulation -->
+      <div class="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+        <div class="px-4 py-2.5 bg-slate-900 border-b border-slate-800/80 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-300">Harbor Anchorage Viewport</span>
+          </div>
+          <span class="text-[11px] text-slate-400 font-mono-num" id="canvasSimDateBadge">Voyage Date: -</span>
+        </div>
+
+        <div class="relative w-full bg-slate-950 aspect-[16/9] min-h-[300px]">
+          <canvas id="shipCanvas" class="w-full h-full block cursor-pointer"></canvas>
+          <div id="containerTooltip" class="absolute hidden pointer-events-none z-20 bg-slate-900/95 border border-slate-700 text-slate-100 text-xs px-3 py-2 rounded-lg shadow-xl backdrop-blur-md max-w-xs transition-opacity duration-150"></div>
+        </div>
+
+        <!-- Legend and Category Tags Bar -->
+        <div class="px-4 py-2 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
+          <div class="flex items-center gap-1.5 flex-wrap" id="categoryLegendBar">
+            <!-- Populated dynamically -->
+          </div>
+          <span class="text-[11px] text-slate-500 italic">Hover containers for manifest details</span>
+        </div>
+      </div>
+
+      <!-- Capacity & Plimsoll Line Control Meter -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xl">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2 mb-1">
+            <span>⚓ Management Capacity Meter</span>
+          </h2>
+          <p class="text-xs text-slate-400 mb-4">The Plimsoll Line indicates maximum safe workload for leadership before overload.</p>
+          
+          <!-- Slot Capacity Stepper Card -->
+          <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 mb-3 flex items-center justify-between gap-3">
+            <div>
+              <span class="text-xs font-semibold text-slate-200 block">Available Slot Capacity</span>
+              <span class="text-[11px] text-slate-400">Total safe work units vessel can carry</span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-700/80 rounded-lg p-1">
+              <button type="button" id="btnDecreaseCapacity" class="w-7 h-7 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold flex items-center justify-center transition active:scale-95 text-sm" title="Decrease slots">-</button>
+              <input 
+                type="number" 
+                id="capacityInput" 
+                min="2" 
+                max="100" 
+                value="20" 
+                class="w-12 text-center bg-transparent font-mono-num text-sm font-bold text-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500 rounded"
+              >
+              <button type="button" id="btnIncreaseCapacity" class="w-7 h-7 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold flex items-center justify-center transition active:scale-95 text-sm" title="Increase slots">+</button>
+            </div>
+          </div>
+
+          <!-- Gauge Card -->
+          <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 mb-3">
+            <div class="flex justify-between items-center text-xs mb-1.5">
+              <span class="text-slate-400">Current Load Factor</span>
+              <span id="capacityPercentText" class="font-bold font-mono-num text-cyan-400">0%</span>
+            </div>
+            <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700">
+              <div id="capacityProgressBar" class="h-full rounded-full bg-cyan-500 transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-500 mt-1 font-mono-num">
+              <span>0% Empty</span>
+              <span>80% Warning</span>
+              <span>100% Plimsoll Limit</span>
+            </div>
+          </div>
+
+          <!-- Metaphor Guidance -->
+          <div class="space-y-2 text-xs text-slate-300">
+            <div class="flex items-start gap-2 bg-slate-800/40 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-amber-400 text-sm">⚓</span>
+              <div>
+                <strong class="text-slate-200">Always On (Hull Ballast):</strong>
+                <p class="text-[11px] text-slate-400">Continuous core responsibilities sitting at the hull base.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-2 bg-slate-800/40 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-cyan-400 text-sm">📦</span>
+              <div>
+                <strong class="text-slate-200">Dated Tasks (Deck Cargo):</strong>
+                <p class="text-[11px] text-slate-400">Projects hoisted onboard by gantry crane at start date and offloaded at finish.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 flex gap-2">
+          <button id="btnResetDemo" class="w-full py-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium border border-slate-700/60 transition">
+            Restore Demo Data
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button id="btnPlayPause" class="w-9 h-9 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center transition shadow shadow-cyan-600/20 active:scale-95" title="Play/Pause Voyage Simulation">
+              <svg id="iconPlay" class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+              <svg id="iconPause" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            </button>
+            <button id="btnPrevDay" class="w-8 h-8 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center transition" title="Previous Day">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button id="btnNextDay" class="w-8 h-8 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center transition" title="Next Day">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </button>
+            <button id="btnToday" class="px-2.5 py-1 text-xs font-semibold rounded-lg text-cyan-400 hover:text-cyan-300 hover:bg-slate-800 transition">
+              Today
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1.5 text-xs text-slate-400">
+            <span>Speed:</span>
+            <select id="selectSpeed" class="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-cyan-500">
+              <option value="1500">0.5x</option>
+              <option value="900" selected>1.0x</option>
+              <option value="450">2.0x</option>
+              <option value="200">5.0x</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="text-center sm:text-right">
+          <div class="text-xs text-slate-400 font-medium">Simulation Timeline Position</div>
+          <div id="displayCurrentDate" class="text-base font-bold text-cyan-300 font-mono-num">-</div>
+        </div>
+      </div>
+
+      <!-- Scrubber Slider -->
+      <div class="flex items-center gap-3 pt-1">
+        <span id="labelMinDate" class="text-[11px] font-mono-num text-slate-500 min-w-[70px]">-</span>
+        <input type="range" id="timelineSlider" min="0" max="100" value="0" class="flex-1">
+        <span id="labelMaxDate" class="text-[11px] font-mono-num text-slate-500 min-w-[70px] text-right">-</span>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <span>📋 Cargo Manifest</span>
+            <span id="manifestCountBadge" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono-num">0 items</span>
+          </h2>
+          <p class="text-xs text-slate-400">Track and manage tasks loaded onto the management vessel</p>
+        </div>
+
+        <!-- Filter and CSV Action Toolbar -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <!-- Search box -->
+          <div class="relative">
+            <input type="text" id="manifestSearch" placeholder="Search tasks..." class="bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-500 rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:border-cyan-500 w-36 sm:w-48 text-xs">
+            <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+
+          <!-- Status Filter -->
+          <select id="manifestStatusFilter" class="bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cyan-500">
+            <option value="all">All Cargo</option>
+            <option value="onboard">Currently Onboard</option>
+            <option value="always">Always On (Ballast)</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="offloaded">Past / Offloaded</option>
+          </select>
+
+          <!-- Category Filter -->
+          <select id="manifestCategoryFilter" class="bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cyan-500">
+            <option value="all">All Categories</option>
+          </select>
+
+          <div class="h-5 w-[1px] bg-slate-800 hidden sm:block"></div>
+
+          <!-- CSV Buttons -->
+          <button id="btnTriggerImportCSV" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-medium transition flex items-center gap-1.5" title="Import tasks from a CSV file">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            <span>Load CSV</span>
+          </button>
+
+          <button id="btnExportCSV" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-medium transition flex items-center gap-1.5" title="Export cargo tasks to a CSV file">
+            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>Export CSV</span>
+          </button>
+
+          <button id="btnDownloadSampleCSV" class="px-2 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition" title="Download sample template CSV">
+            📋 Sample
+          </button>
+        </div>
+      </div>
+
+      <!-- Manifest Table -->
+      <div class="overflow-x-auto rounded-xl border border-slate-800">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-950/80 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[10px]">
+            <tr>
+              <th class="py-2.5 px-4 font-semibold">Status</th>
+              <th class="py-2.5 px-4 font-semibold">Title</th>
+              <th class="py-2.5 px-4 font-semibold">Category</th>
+              <th class="py-2.5 px-4 font-semibold">Type / Size</th>
+              <th class="py-2.5 px-4 font-semibold">Schedule Period</th>
+              <th class="py-2.5 px-4 font-semibold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="manifestTableBody" class="divide-y divide-slate-800/60 font-mono-num">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Hidden File Input for CSV -->
+  <input type="file" id="csvFileInput" accept=".csv,text/csv" class="hidden">
+
+  <!-- Task Add/Edit Modal -->
+  <div id="taskModal" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+      <div class="px-5 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+        <h3 id="taskModalTitle" class="text-sm font-bold text-white flex items-center gap-2">
+          <span>📦</span>
+          <span>Load New Cargo Container</span>
+        </h3>
+        <button type="button" id="btnCloseTaskModal" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form id="taskForm" class="p-5 space-y-4 text-xs">
+        <input type="hidden" id="taskEditId">
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1" for="taskTitle">Cargo Title / Task Name *</label>
+          <input type="text" id="taskTitle" required placeholder="e.g. Budget Approval Q3, Security Audit..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1" for="taskCategory">Category *</label>
+            <select id="taskCategory" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1" for="taskWeight">Container Size / Weight</label>
+            <select id="taskWeight" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500">
+              <option value="1">20ft Standard (1 Slot)</option>
+              <option value="2">40ft High Cube Heavy (2 Slots)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Always On Toggle -->
+        <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <span class="font-semibold text-slate-200 block">Always On Task (Ballast)</span>
+            <span class="text-[11px] text-slate-400">Permanently occupies vessel capacity (e.g. 1-on-1s, incident duty).</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="taskAlwaysOn" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+          </label>
+        </div>
+
+        <!-- Date Range Controls -->
+        <div id="dateRangeFields" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1" for="taskStartDate">Start Date (Loaded) *</label>
+            <input type="date" id="taskStartDate" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 font-mono-num">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-300 mb-1" for="taskEndDate">End Date (Offloaded) *</label>
+            <input type="date" id="taskEndDate" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 font-mono-num">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1" for="taskNotes">Operational Notes / Manifest Remarks</label>
+          <textarea id="taskNotes" rows="2" placeholder="Brief deliverables, lead personnel, or dependency info..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+          <button type="button" id="btnCancelTaskModal" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-md shadow-cyan-600/30 transition">Save Cargo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Category Manager Modal -->
+  <div id="categoryModal" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+      <div class="px-5 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>🎨</span>
+          <span>Category & Container Color Manager</span>
+        </h3>
+        <button type="button" id="btnCloseCategoryModal" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs">
+        <p class="text-slate-400">Customize the categories representing work streams. Containers on the ship automatically reflect their category color.</p>
+
+        <!-- Current Category List -->
+        <div id="categoryEditList" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+          <!-- Dynamically populated category rows -->
+        </div>
+
+        <!-- Add Category Form -->
+        <div class="pt-3 border-t border-slate-800">
+          <span class="block font-semibold text-slate-200 mb-2">Create New Category</span>
+          <div class="flex gap-2 items-center">
+            <input type="color" id="newCategoryColor" value="#10b981" class="w-9 h-9 rounded-lg bg-transparent border border-slate-700 cursor-pointer p-0.5">
+            <input type="text" id="newCategoryName" placeholder="New Category Name..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500">
+            <button type="button" id="btnAddCategory" class="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold transition">Add</button>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-800 flex justify-end">
+          <button type="button" id="btnDoneCategories" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium transition">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV Import Mode Dialog Modal -->
+  <div id="csvImportModal" class="fixed inset-0 z-50 modal-backdrop hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+      <div class="px-5 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>📥</span>
+          <span>Import CSV Cargo Manifest</span>
+        </h3>
+        <button type="button" id="btnCloseImportModal" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs">
+        <div id="csvImportPreview" class="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono-num text-[11px] text-slate-300">
+          <!-- Populated with row preview -->
+        </div>
+
+        <p class="text-slate-300 font-medium">How would you like to load this cargo?</p>
+
+        <div class="space-y-2">
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800 cursor-pointer hover:border-cyan-500/50 transition">
+            <input type="radio" name="importMode" value="append" checked class="mt-0.5 text-cyan-500 focus:ring-cyan-500">
+            <div>
+              <span class="font-semibold text-white block">Append to Current Cargo</span>
+              <span class="text-[11px] text-slate-400">Keep existing onboard containers and add the new CSV rows.</span>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800 cursor-pointer hover:border-rose-500/50 transition">
+            <input type="radio" name="importMode" value="replace" class="mt-0.5 text-rose-500 focus:ring-rose-500">
+            <div>
+              <span class="font-semibold text-white block">Replace All Cargo</span>
+              <span class="text-[11px] text-slate-400">Clear existing cargo manifest and load only the items in this CSV file.</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 flex justify-end gap-2">
+          <button type="button" id="btnCancelImportModal" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">Cancel</button>
+          <button type="button" id="btnExecuteImport" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition">Proceed with Import</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification element -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2"></div>
+
+  <script>
+    const DEFAULT_CATEGORIES = [
+      { id: 'cat-core', name: 'Strategic & OKRs', color: '#0284c7' },       // Sky blue
+      { id: 'cat-incident', name: 'Incidents & Tech Debt', color: '#ef4444' }, // Crimson
+      { id: 'cat-people', name: 'People & 1-on-1s', color: '#10b981' },      // Emerald green
+      { id: 'cat-governance', name: 'Compliance & Audits', color: '#f59e0b' },// Amber
+      { id: 'cat-platform', name: 'Platform Migration', color: '#8b5cf6' }   // Violet
+    ];
+
+    // Helper to format ISO date YYYY-MM-DD
+    function formatDateISO(d) {
+      if (!d) return new Date().toISOString().split('T')[0];
+      const parsed = (d instanceof Date) ? d : new Date(d);
+      if (isNaN(parsed.getTime())) {
+        return new Date().toISOString().split('T')[0];
+      }
+      return parsed.toISOString().split('T')[0];
+    }
+
+    // Offset helper in days
+    function addDays(d, days) {
+      const copy = new Date(d);
+      copy.setDate(copy.getDate() + days);
+      return copy;
+    }
+
+    const todayDate = new Date();
+
+    const DEFAULT_TASKS = [
+      {
+        id: 't-1',
+        title: 'Weekly 1-on-1s & Mentorship',
+        category: 'cat-people',
+        alwaysOn: true,
+        startDate: '',
+        endDate: '',
+        weight: 2,
+        notes: 'Routine direct report check-ins and engineering career growth.'
+      },
+      {
+        id: 't-2',
+        title: 'On-Call Incident Escalation Duty',
+        category: 'cat-incident',
+        alwaysOn: true,
+        startDate: '',
+        endDate: '',
+        weight: 1,
+        notes: '24/7 Tier 3 escalation standby for production services.'
+      },
+      {
+        id: 't-3',
+        title: 'Kubernetes Cluster Fleet Upgrade',
+        category: 'cat-platform',
+        alwaysOn: false,
+        startDate: formatDateISO(addDays(todayDate, -14)),
+        endDate: formatDateISO(addDays(todayDate, 10)),
+        weight: 2,
+        notes: 'Migrating microservices from v1.28 to v1.31 across AWS regions.'
+      },
+      {
+        id: 't-4',
+        title: 'Annual SOC2 Type II Audit',
+        category: 'cat-governance',
+        alwaysOn: false,
+        startDate: formatDateISO(addDays(todayDate, -7)),
+        endDate: formatDateISO(addDays(todayDate, 21)),
+        weight: 2,
+        notes: 'Access review, policy updates, and external auditor interviews.'
+      },
+      {
+        id: 't-5',
+        title: 'Q4 Product Roadmap & Headcount Pitch',
+        category: 'cat-core',
+        alwaysOn: false,
+        startDate: formatDateISO(addDays(todayDate, 2)),
+        endDate: formatDateISO(addDays(todayDate, 25)),
+        weight: 1,
+        notes: 'Executive proposal for engineering bandwidth allocation.'
+      },
+      {
+        id: 't-6',
+        title: 'Database Sharding & Connection Pool Tuning',
+        category: 'cat-incident',
+        alwaysOn: false,
+        startDate: formatDateISO(addDays(todayDate, -20)),
+        endDate: formatDateISO(addDays(todayDate, -2)),
+        weight: 1,
+        notes: 'Eliminating deadlocks during peak customer billing hours.'
+      }
+    ];
+
+    let categories = JSON.parse(localStorage.getItem('cargo_categories')) || DEFAULT_CATEGORIES;
+    let tasks = JSON.parse(localStorage.getItem('cargo_tasks')) || DEFAULT_TASKS;
+    let shipCapacity = parseInt(localStorage.getItem('cargo_ship_capacity'), 10) || 20;
+
+    // Simulation Clock & Bounds
+    let isPlaying = false;
+    let playbackInterval = null;
+    let playbackSpeedMs = 900;
+
+    let minVoyageDate = new Date();
+    let maxVoyageDate = new Date();
+    let currentSimDate = new Date();
+
+    // Crane Animation State
+    let craneTrolleyX = 0.2;
+    let craneHookY = 0.1;
+    let craneActive = false;
+
+    // Canvas container positions for interactive hover/click
+    let renderedContainers = [];
+
+    // Pending CSV parsed items for the import modal
+    let pendingCSVRows = [];
+
+    function recalculateTimelineBounds() {
+      const datedTasks = tasks.filter(t => !t.alwaysOn && t.startDate && t.endDate);
+      if (datedTasks.length === 0) {
+        minVoyageDate = addDays(new Date(), -30);
+        maxVoyageDate = addDays(new Date(), 60);
+      } else {
+        let minMs = Infinity;
+        let maxMs = -Infinity;
+
+        datedTasks.forEach(t => {
+          const s = new Date(t.startDate).getTime();
+          const e = new Date(t.endDate).getTime();
+          if (Number.isFinite(s) && s < minMs) minMs = s;
+          if (Number.isFinite(e) && e > maxMs) maxMs = e;
+        });
+
+        if (!Number.isFinite(minMs) || !Number.isFinite(maxMs)) {
+          minVoyageDate = addDays(new Date(), -30);
+          maxVoyageDate = addDays(new Date(), 60);
+        } else {
+          // Add pad days before and after
+          minVoyageDate = addDays(new Date(minMs), -7);
+          maxVoyageDate = addDays(new Date(maxMs), 14);
+        }
+      }
+
+      // Constrain currentSimDate within bounds if out of range
+      if (currentSimDate < minVoyageDate) currentSimDate = new Date(minVoyageDate);
+      if (currentSimDate > maxVoyageDate) currentSimDate = new Date(maxVoyageDate);
+
+      updateTimelineLabels();
+      syncSliderWithDate();
+    }
+
+    function isTaskActive(task, testDate) {
+      if (task.alwaysOn) return true;
+      if (!task.startDate || !task.endDate) return false;
+      const testMs = new Date(formatDateISO(testDate)).getTime();
+      const startMs = new Date(task.startDate).getTime();
+      const endMs = new Date(task.endDate).getTime();
+      return testMs >= startMs && testMs <= endMs;
+    }
+
+    function getTaskCategory(catId) {
+      return categories.find(c => c.id === catId) || { id: catId, name: catId, color: '#64748b' };
+    }
+
+    const canvas = document.getElementById('shipCanvas');
+    const ctx = canvas.getContext('2d');
+    let waveOffset = 0;
+    let shipBob = 0;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.resetTransform ? ctx.resetTransform() : ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function drawSimulation() {
+      const rect = canvas.getBoundingClientRect();
+      const canvasW = rect.width;
+      const canvasH = rect.height;
+
+      if (!canvasW || !canvasH) {
+        requestAnimationFrame(drawSimulation);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvasW, canvasH);
+
+      // Waves and ship floating physics
+      waveOffset += 0.035;
+      shipBob = Math.sin(waveOffset * 0.8) * 3;
+
+      const activeTasks = tasks.filter(t => isTaskActive(t, currentSimDate));
+      const totalWeight = activeTasks.reduce((sum, t) => sum + (t.weight || 1), 0);
+      const capacityRatio = Math.min(totalWeight / shipCapacity, 1.4);
+      
+      // Plimsoll line draft: heavier load sinks the ship deeper into the water
+      const draftSinkPixels = capacityRatio * 24;
+
+      // 1. Sky & Backdrop Harbor
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, canvasH * 0.65);
+      skyGrad.addColorStop(0, '#090d16');
+      skyGrad.addColorStop(1, '#1e293b');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, canvasW, canvasH);
+
+      // Distant harbor skyline silhouettes
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.rect(0, canvasH * 0.42, canvasW * 0.22, canvasH * 0.2);
+      ctx.rect(canvasW * 0.15, canvasH * 0.38, 40, canvasH * 0.25);
+      ctx.rect(canvasW * 0.78, canvasH * 0.40, canvasW * 0.22, canvasH * 0.2);
+      ctx.fill();
+
+      // Harbor gantry cranes in background
+      drawHarborGantry(ctx, canvasW * 0.86, canvasH * 0.32, 70, 90);
+
+      // Water waterline base coordinate
+      const waterLineY = canvasH * 0.66;
+
+      // 2. The Cargo Vessel
+      const shipW = Math.min(canvasW * 0.82, 720);
+      const shipH = 80;
+      const shipLeft = (canvasW - shipW) / 2;
+      const shipTop = waterLineY - 45 + shipBob + draftSinkPixels;
+
+      ctx.save();
+
+      // Lower Hull (Dark Red / Antifouling paint)
+      ctx.fillStyle = '#7f1d1d';
+      ctx.beginPath();
+      ctx.moveTo(shipLeft + 25, shipTop + 35);
+      ctx.lineTo(shipLeft + shipW - 35, shipTop + 35);
+      ctx.lineTo(shipLeft + shipW - 55, shipTop + shipH);
+      ctx.lineTo(shipLeft + 55, shipTop + shipH);
+      ctx.closePath();
+      ctx.fill();
+
+      // Upper Hull (Industrial Navy/Slate)
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(shipLeft, shipTop + 10);
+      ctx.lineTo(shipLeft + shipW, shipTop + 10);
+      ctx.lineTo(shipLeft + shipW - 35, shipTop + 38);
+      ctx.lineTo(shipLeft + 25, shipTop + 38);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Plimsoll Line & Draft Marks on Hull
+      const plimsollX = shipLeft + shipW * 0.5;
+      const plimsollY = shipTop + 35;
+      ctx.strokeStyle = totalWeight > shipCapacity ? '#ef4444' : '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(plimsollX, plimsollY, 7, 0, Math.PI * 2);
+      ctx.moveTo(plimsollX - 12, plimsollY);
+      ctx.lineTo(plimsollX + 12, plimsollY);
+      ctx.stroke();
+
+      // Draft tick marks
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(plimsollX + 18, plimsollY - 10 + i * 5);
+        ctx.lineTo(plimsollX + 26, plimsollY - 10 + i * 5);
+        ctx.stroke();
+      }
+
+      // Ship Bridge / Navigation Superstructure (Stern side)
+      const bridgeW = 60;
+      const bridgeH = 50;
+      const bridgeX = shipLeft + 35;
+      const bridgeY = shipTop - bridgeH + 10;
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(bridgeX, bridgeY, bridgeW, bridgeH);
+
+      // Bridge Windows
+      ctx.fillStyle = '#0284c7';
+      for (let w = 0; w < 4; w++) {
+        ctx.fillRect(bridgeX + 8 + w * 12, bridgeY + 8, 8, 7);
+      }
+
+      // Radar Mast & Funnel
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(bridgeX + 42, bridgeY - 16, 12, 16);
+      ctx.strokeStyle = '#64748b';
+      ctx.beginPath();
+      ctx.moveTo(bridgeX + 20, bridgeY);
+      ctx.lineTo(bridgeX + 20, bridgeY - 24);
+      ctx.moveTo(bridgeX + 14, bridgeY - 18);
+      ctx.lineTo(bridgeX + 26, bridgeY - 18);
+      ctx.stroke();
+
+      // Vessel Name
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      ctx.fillText('M/V LEADERSHIP', shipLeft + 35, shipTop + 30);
+
+      // Reset rendered container bounds cache for hit-testing
+      renderedContainers = [];
+
+      // 3. Container Stacking on Deck
+      const bayStartX = shipLeft + bridgeW + 20;
+      const bayEndX = shipLeft + shipW * 0.90;
+      const availableDeckLength = bayEndX - bayStartX;
+      
+      const numColumns = Math.min(10, Math.max(4, Math.ceil(Math.sqrt(shipCapacity * 1.5))));
+      const colWidth = Math.floor(availableDeckLength / numColumns);
+      const containerH = 24;
+      const containerGap = 2;
+
+      // Group: Always-On Tasks stacked first (Hull Ballast), then dated tasks
+      const alwaysOnTasks = activeTasks.filter(t => t.alwaysOn);
+      const datedActiveTasks = activeTasks.filter(t => !t.alwaysOn);
+      const orderedToDraw = [...alwaysOnTasks, ...datedActiveTasks];
+
+      const columnHeights = new Array(numColumns).fill(0);
+
+      orderedToDraw.forEach((task) => {
+        const cat = getTaskCategory(task.category);
+        const slotsNeeded = task.weight || 1;
+
+        // Find lowest stacked adjacent column bay that fits
+        let bestCol = 0;
+        let minH = Infinity;
+
+        for (let c = 0; c <= numColumns - (slotsNeeded === 2 && numColumns > 1 ? 2 : 1); c++) {
+          const effectiveH = slotsNeeded === 2 ? Math.max(columnHeights[c], columnHeights[c + 1]) : columnHeights[c];
+          if (effectiveH < minH) {
+            minH = effectiveH;
+            bestCol = c;
+          }
+        }
+
+        const stackTier = slotsNeeded === 2 ? Math.max(columnHeights[bestCol], columnHeights[bestCol + 1]) : columnHeights[bestCol];
+        const containerW = (colWidth * slotsNeeded) - containerGap * 2;
+        const cX = bayStartX + (bestCol * colWidth) + containerGap;
+        const cY = shipTop + 10 - ((stackTier + 1) * (containerH + containerGap));
+
+        // Draw ISO cargo container
+        drawCargoContainer(ctx, cX, cY, containerW, containerH, cat.color, task);
+
+        // Store bounding box for tooltip and click selection
+        renderedContainers.push({
+          x: cX,
+          y: cY,
+          w: containerW,
+          h: containerH,
+          task: task,
+          category: cat
+        });
+
+        // Advance column stacks
+        if (slotsNeeded === 2 && numColumns > 1) {
+          columnHeights[bestCol] = stackTier + 1;
+          columnHeights[bestCol + 1] = stackTier + 1;
+        } else {
+          columnHeights[bestCol] = stackTier + 1;
+        }
+      });
+
+      ctx.restore();
+
+      // 4. Foreground Harbor Overhead Crane
+      drawForegroundCrane(ctx, canvasW, canvasH, shipLeft, bayStartX, availableDeckLength, shipTop);
+
+      // 5. Animated Water Waves & Reflection
+      drawWaterWaves(ctx, canvasW, canvasH, waterLineY, waveOffset);
+
+      // 6. Plimsoll Warning Overload Banner
+      if (totalWeight > shipCapacity * 0.85) {
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+        ctx.font = 'bold 11px "Inter", sans-serif';
+        const warnText = '⚠️ PLIMSOLL LINE EXCEEDED: MANAGEMENT OVERLOADED';
+        const tw = ctx.measureText(warnText).width;
+        ctx.fillRect(canvasW / 2 - tw / 2 - 10, 16, tw + 20, 24);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(warnText, canvasW / 2 - tw / 2, 32);
+      }
+
+      requestAnimationFrame(drawSimulation);
+    }
+
+    // Helper: Draw detailed ISO container with corrugated ribs & corner castings
+    function drawCargoContainer(ctx, x, y, w, h, colorHex, task) {
+      ctx.save();
+      ctx.fillStyle = colorHex;
+      ctx.fillRect(x, y, w, h);
+
+      // Corrugated vertical panel ridges
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      const ridgeStep = Math.max(7, Math.floor(w / 8));
+      for (let rx = x + 4; rx < x + w - 4; rx += ridgeStep) {
+        ctx.fillRect(rx, y + 2, 2, h - 4);
+      }
+
+      // Container border & outline
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, w, h);
+
+      // Corner twist-lock casting plates
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      const cs = 3;
+      ctx.fillRect(x, y, cs, cs);
+      ctx.fillRect(x + w - cs, y, cs, cs);
+      ctx.fillRect(x, y + h - cs, cs, cs);
+      ctx.fillRect(x + w - cs, y + h - cs, cs, cs);
+
+      // Container Title & Indicator (shows anchor icon followed by task title)
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      
+      const labelPrefix = task.alwaysOn ? '⚓ ' : '';
+      const fullLabel = labelPrefix + task.title;
+      const maxTextWidth = w - 10;
+      let displayLabel = fullLabel;
+
+      if (ctx.measureText(displayLabel).width > maxTextWidth) {
+        while (displayLabel.length > 3 && ctx.measureText(displayLabel + '…').width > maxTextWidth) {
+          displayLabel = displayLabel.slice(0, -1);
+        }
+        displayLabel += '…';
+      }
+
+      ctx.fillText(displayLabel, x + 5, y + h - 7);
+      ctx.restore();
+    }
+
+    // Helper: Draw Gantry Crane
+    function drawHarborGantry(ctx, x, y, w, h) {
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y + h);
+      ctx.lineTo(x + w * 0.25, y);
+      ctx.lineTo(x + w * 0.75, y);
+      ctx.lineTo(x + w, y + h);
+      ctx.moveTo(x - 20, y);
+      ctx.lineTo(x + w + 30, y);
+      ctx.stroke();
+    }
+
+    // Helper: Draw Foreground Crane
+    function drawForegroundCrane(ctx, canvasW, canvasH, shipLeft, bayStartX, availableDeckLength, shipTop) {
+      const craneRailY = 45;
+      const craneX = bayStartX + (Math.sin(waveOffset * 0.4) * 0.5 + 0.5) * availableDeckLength;
+
+      ctx.save();
+      // Crane Overhead Gantry Girder
+      ctx.strokeStyle = '#eab308';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(bayStartX - 40, craneRailY);
+      ctx.lineTo(bayStartX + availableDeckLength + 40, craneRailY);
+      ctx.stroke();
+
+      // Trolley
+      ctx.fillStyle = '#ca8a04';
+      ctx.fillRect(craneX - 10, craneRailY - 3, 20, 10);
+
+      // Steel Hoist Cables
+      const hookY = shipTop - 30;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(craneX - 6, craneRailY + 7);
+      ctx.lineTo(craneX - 6, hookY);
+      ctx.moveTo(craneX + 6, craneRailY + 7);
+      ctx.lineTo(craneX + 6, hookY);
+      ctx.stroke();
+
+      // Spreader Bar
+      ctx.fillStyle = '#eab308';
+      ctx.fillRect(craneX - 14, hookY, 28, 4);
+      ctx.restore();
+    }
+
+    // Helper: Draw Ocean Water Waves
+    function drawWaterWaves(ctx, w, h, baseLineY, offset) {
+      ctx.save();
+      // Deep Water gradient
+      const waterGrad = ctx.createLinearGradient(0, baseLineY, 0, h);
+      waterGrad.addColorStop(0, 'rgba(14, 116, 144, 0.85)');
+      waterGrad.addColorStop(1, '#082f49');
+      ctx.fillStyle = waterGrad;
+
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      ctx.lineTo(0, baseLineY);
+
+      for (let x = 0; x <= w; x += 15) {
+        const y = baseLineY + Math.sin(x * 0.02 + offset) * 4 + Math.cos(x * 0.04 + offset * 1.2) * 2;
+        ctx.lineTo(x, y);
+      }
+
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      ctx.fill();
+
+      // Foam Crest line
+      ctx.strokeStyle = 'rgba(125, 211, 252, 0.4)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let x = 0; x <= w; x += 20) {
+        const y = baseLineY + Math.sin(x * 0.02 + offset) * 4 + Math.cos(x * 0.04 + offset * 1.2) * 2;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const tooltip = document.getElementById('containerTooltip');
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      let hit = null;
+      for (let i = renderedContainers.length - 1; i >= 0; i--) {
+        const box = renderedContainers[i];
+        if (mouseX >= box.x && mouseX <= box.x + box.w && mouseY >= box.y && mouseY <= box.y + box.h) {
+          hit = box;
+          break;
+        }
+      }
+
+      if (hit) {
+        canvas.style.cursor = 'pointer';
+        tooltip.classList.remove('hidden');
+        tooltip.style.left = `${Math.min(mouseX + 12, rect.width - 200)}px`;
+        tooltip.style.top = `${mouseY + 12}px`;
+        tooltip.innerHTML = `
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:${hit.category.color}"></span>
+            <span class="font-bold text-white">${hit.task.title}</span>
+          </div>
+          <div class="text-[11px] text-slate-300 space-y-0.5 font-mono-num">
+            <div><span class="text-slate-400">Stream:</span> ${hit.category.name}</div>
+            <div><span class="text-slate-400">Weight:</span> ${hit.task.weight === 2 ? '40ft Heavy (2 slots)' : '20ft Standard (1 slot)'}</div>
+            <div><span class="text-slate-400">Voyage:</span> ${hit.task.alwaysOn ? '⚓ Always On (Ballast)' : hit.task.startDate + ' → ' + hit.task.endDate}</div>
+            ${hit.task.notes ? `<div class="text-[10px] text-slate-400 mt-1 italic">${hit.task.notes}</div>` : ''}
+          </div>
+        `;
+      } else {
+        canvas.style.cursor = 'default';
+        tooltip.classList.add('hidden');
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      tooltip.classList.add('hidden');
+    });
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      for (let i = renderedContainers.length - 1; i >= 0; i--) {
+        const box = renderedContainers[i];
+        if (mouseX >= box.x && mouseX <= box.x + box.w && mouseY >= box.y && mouseY <= box.y + box.h) {
+          openEditTaskModal(box.task.id);
+          break;
+        }
+      }
+    });
+
+    const statOnboardCount = document.getElementById('statOnboardCount');
+    const statCapacityMax = document.getElementById('statCapacityMax');
+    const statDraftLoad = document.getElementById('statDraftLoad');
+    const capacityPercentText = document.getElementById('capacityPercentText');
+    const capacityProgressBar = document.getElementById('capacityProgressBar');
+    const canvasSimDateBadge = document.getElementById('canvasSimDateBadge');
+    const displayCurrentDate = document.getElementById('displayCurrentDate');
+    const labelMinDate = document.getElementById('labelMinDate');
+    const labelMaxDate = document.getElementById('labelMaxDate');
+    const timelineSlider = document.getElementById('timelineSlider');
+    const manifestTableBody = document.getElementById('manifestTableBody');
+    const manifestCountBadge = document.getElementById('manifestCountBadge');
+    const categoryLegendBar = document.getElementById('categoryLegendBar');
+    const capacityInput = document.getElementById('capacityInput');
+
+    function updateStatsHUD() {
+      const activeTasks = tasks.filter(t => isTaskActive(t, currentSimDate));
+      const totalWeight = activeTasks.reduce((sum, t) => sum + (t.weight || 1), 0);
+      const pct = Math.round((totalWeight / shipCapacity) * 100);
+
+      statOnboardCount.textContent = activeTasks.length;
+      if (statCapacityMax) statCapacityMax.textContent = `${shipCapacity} slots`;
+      if (capacityInput && document.activeElement !== capacityInput) {
+        capacityInput.value = shipCapacity;
+      }
+      capacityPercentText.textContent = `${pct}%`;
+      capacityProgressBar.style.width = `${Math.min(pct, 100)}%`;
+
+      if (pct < 50) {
+        statDraftLoad.textContent = `Light (${pct}%)`;
+        statDraftLoad.className = 'font-bold text-emerald-400 font-mono-num';
+        capacityProgressBar.className = 'h-full rounded-full bg-emerald-500 transition-all duration-300';
+      } else if (pct <= 85) {
+        statDraftLoad.textContent = `Optimal (${pct}%)`;
+        statDraftLoad.className = 'font-bold text-cyan-400 font-mono-num';
+        capacityProgressBar.className = 'h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-300';
+      } else {
+        statDraftLoad.textContent = `OVERLOAD (${pct}%)`;
+        statDraftLoad.className = 'font-bold text-rose-400 font-mono-num animate-pulse';
+        capacityProgressBar.className = 'h-full rounded-full bg-gradient-to-r from-amber-500 to-rose-600 transition-all duration-300';
+      }
+    }
+
+    function updateTimelineLabels() {
+      const simISO = formatDateISO(currentSimDate);
+      displayCurrentDate.textContent = simISO;
+      canvasSimDateBadge.textContent = `Voyage Date: ${simISO}`;
+      labelMinDate.textContent = formatDateISO(minVoyageDate);
+      labelMaxDate.textContent = formatDateISO(maxVoyageDate);
+      updateStatsHUD();
+      renderManifestTable();
+    }
+
+    function syncSliderWithDate() {
+      const minMs = minVoyageDate.getTime();
+      const maxMs = maxVoyageDate.getTime();
+      const curMs = currentSimDate.getTime();
+      if (maxMs > minMs) {
+        const ratio = (curMs - minMs) / (maxMs - minMs);
+        timelineSlider.value = Math.round(ratio * 1000);
+      }
+    }
+
+    timelineSlider.max = 1000;
+    timelineSlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      const minMs = minVoyageDate.getTime();
+      const maxMs = maxVoyageDate.getTime();
+      const targetMs = minMs + (val / 1000) * (maxMs - minMs);
+      currentSimDate = new Date(targetMs);
+      updateTimelineLabels();
+    });
+
+    // Speed Selector
+    document.getElementById('selectSpeed').addEventListener('change', (e) => {
+      playbackSpeedMs = parseInt(e.target.value, 10);
+      if (isPlaying) {
+        stopPlayback();
+        startPlayback();
+      }
+    });
+
+    // Playback Controls
+    const btnPlayPause = document.getElementById('btnPlayPause');
+    const iconPlay = document.getElementById('iconPlay');
+    const iconPause = document.getElementById('iconPause');
+
+    function startPlayback() {
+      isPlaying = true;
+      iconPlay.classList.add('hidden');
+      iconPause.classList.remove('hidden');
+      playbackInterval = setInterval(() => {
+        currentSimDate = addDays(currentSimDate, 1);
+        if (currentSimDate > maxVoyageDate) {
+          currentSimDate = new Date(minVoyageDate);
+        }
+        syncSliderWithDate();
+        updateTimelineLabels();
+      }, playbackSpeedMs);
+    }
+
+    function stopPlayback() {
+      isPlaying = false;
+      iconPlay.classList.remove('hidden');
+      iconPause.classList.add('hidden');
+      if (playbackInterval) {
+        clearInterval(playbackInterval);
+        playbackInterval = null;
+      }
+    }
+
+    btnPlayPause.addEventListener('click', () => {
+      if (isPlaying) stopPlayback();
+      else startPlayback();
+    });
+
+    document.getElementById('btnPrevDay').addEventListener('click', () => {
+      stopPlayback();
+      currentSimDate = addDays(currentSimDate, -1);
+      if (currentSimDate < minVoyageDate) currentSimDate = new Date(minVoyageDate);
+      syncSliderWithDate();
+      updateTimelineLabels();
+    });
+
+    document.getElementById('btnNextDay').addEventListener('click', () => {
+      stopPlayback();
+      currentSimDate = addDays(currentSimDate, 1);
+      if (currentSimDate > maxVoyageDate) currentSimDate = new Date(maxVoyageDate);
+      syncSliderWithDate();
+      updateTimelineLabels();
+    });
+
+    document.getElementById('btnToday').addEventListener('click', () => {
+      stopPlayback();
+      currentSimDate = new Date();
+      if (currentSimDate < minVoyageDate || currentSimDate > maxVoyageDate) {
+        recalculateTimelineBounds();
+      }
+      syncSliderWithDate();
+      updateTimelineLabels();
+    });
+
+    function renderCategoryPills() {
+      // 1. Canvas Legend Bar
+      categoryLegendBar.innerHTML = '';
+      categories.forEach(cat => {
+        const pill = document.createElement('div');
+        pill.className = 'flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-[11px] text-slate-200';
+        pill.innerHTML = `
+          <span class="w-2.5 h-2.5 rounded-sm inline-block" style="background:${cat.color}"></span>
+          <span>${cat.name}</span>
+        `;
+        categoryLegendBar.appendChild(pill);
+      });
+
+      // 2. Task Modal Category Select Options
+      const taskCategorySelect = document.getElementById('taskCategory');
+      taskCategorySelect.innerHTML = '';
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        taskCategorySelect.appendChild(opt);
+      });
+
+      // 3. Manifest Filter Select
+      const manifestCategoryFilter = document.getElementById('manifestCategoryFilter');
+      const curFilter = manifestCategoryFilter.value;
+      manifestCategoryFilter.innerHTML = '<option value="all">All Categories</option>';
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        manifestCategoryFilter.appendChild(opt);
+      });
+      manifestCategoryFilter.value = curFilter || 'all';
+
+      // 4. Category Modal List
+      renderCategoryModalList();
+    }
+
+    function renderCategoryModalList() {
+      const container = document.getElementById('categoryEditList');
+      container.innerHTML = '';
+
+      categories.forEach(cat => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 p-2 rounded-xl bg-slate-950/80 border border-slate-800';
+        row.innerHTML = `
+          <input type="color" value="${cat.color}" data-cat-id="${cat.id}" class="cat-color-picker w-8 h-8 rounded-lg bg-transparent border border-slate-700 cursor-pointer p-0.5">
+          <input type="text" value="${cat.name}" data-cat-id="${cat.id}" class="cat-name-input flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500">
+          <button type="button" data-cat-id="${cat.id}" class="btn-delete-cat p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition" title="Delete category">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        `;
+        container.appendChild(row);
+      });
+
+      // Bind color changes
+      container.querySelectorAll('.cat-color-picker').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const cat = categories.find(c => c.id === e.target.dataset.catId);
+          if (cat) {
+            cat.color = e.target.value;
+            saveCategories();
+            renderCategoryPills();
+          }
+        });
+      });
+
+      // Bind name changes
+      container.querySelectorAll('.cat-name-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const cat = categories.find(c => c.id === e.target.dataset.catId);
+          if (cat && e.target.value.trim()) {
+            cat.name = e.target.value.trim();
+            saveCategories();
+            renderCategoryPills();
+            renderManifestTable();
+          }
+        });
+      });
+
+      // Bind delete category button
+      container.querySelectorAll('.btn-delete-cat').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const catId = e.currentTarget.dataset.catId;
+          if (categories.length <= 1) {
+            showToast('You must keep at least one category.', 'error');
+            return;
+          }
+          categories = categories.filter(c => c.id !== catId);
+          // Reassign orphaned tasks to first available category
+          tasks.forEach(t => {
+            if (t.category === catId) t.category = categories[0].id;
+          });
+          saveCategories();
+          saveTasks();
+          renderCategoryPills();
+          renderManifestTable();
+          showToast('Category deleted and affected tasks reassigned.');
+        });
+      });
+    }
+
+    function saveCategories() {
+      localStorage.setItem('cargo_categories', JSON.stringify(categories));
+    }
+
+    function saveTasks() {
+      localStorage.setItem('cargo_tasks', JSON.stringify(tasks));
+    }
+
+    function renderManifestTable() {
+      const search = document.getElementById('manifestSearch').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('manifestStatusFilter').value;
+      const catFilter = document.getElementById('manifestCategoryFilter').value;
+
+      const filtered = tasks.filter(t => {
+        // Search filter
+        if (search && !t.title.toLowerCase().includes(search) && (!t.notes || !t.notes.toLowerCase().includes(search))) {
+          return false;
+        }
+        // Category filter
+        if (catFilter !== 'all' && t.category !== catFilter) {
+          return false;
+        }
+        // Status filter
+        const isActive = isTaskActive(t, currentSimDate);
+        if (statusFilter === 'onboard' && !isActive) return false;
+        if (statusFilter === 'always' && !t.alwaysOn) return false;
+        if (statusFilter === 'upcoming') {
+          if (t.alwaysOn) return false;
+          const sMs = new Date(t.startDate).getTime();
+          const curMs = new Date(formatDateISO(currentSimDate)).getTime();
+          if (sMs <= curMs) return false;
+        }
+        if (statusFilter === 'offloaded') {
+          if (t.alwaysOn) return false;
+          const eMs = new Date(t.endDate).getTime();
+          const curMs = new Date(formatDateISO(currentSimDate)).getTime();
+          if (eMs >= curMs) return false;
+        }
+        return true;
+      });
+
+      manifestCountBadge.textContent = `${filtered.length} of ${tasks.length} items`;
+      manifestTableBody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        manifestTableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="py-8 text-center text-slate-500 italic">No cargo manifests match your filter criteria.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      filtered.forEach(task => {
+        const cat = getTaskCategory(task.category);
+        const active = isTaskActive(task, currentSimDate);
+        
+        // Status badge
+        let statusBadge = '';
+        if (task.alwaysOn) {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-950/80 text-amber-400 border border-amber-800">⚓ Always On</span>';
+        } else if (active) {
+          statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800">● Onboard</span>';
+        } else {
+          const sMs = new Date(task.startDate).getTime();
+          const curMs = new Date(formatDateISO(currentSimDate)).getTime();
+          if (sMs > curMs) {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-950/80 text-cyan-400 border border-cyan-800">⏳ Upcoming</span>';
+          } else {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700">✓ Offloaded</span>';
+          }
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-900/60 transition';
+        tr.innerHTML = `
+          <td class="py-3 px-4 whitespace-nowrap">${statusBadge}</td>
+          <td class="py-3 px-4 font-medium text-slate-100 font-sans">
+            <div>${task.title}</div>
+            ${task.notes ? `<div class="text-[11px] text-slate-400 font-normal truncate max-w-xs">${task.notes}</div>` : ''}
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap">
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium" style="background:${cat.color}20; color:${cat.color}; border: 1px solid ${cat.color}40">
+              <span class="w-1.5 h-1.5 rounded-full" style="background:${cat.color}"></span>
+              ${cat.name}
+            </span>
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-slate-300">
+            ${task.weight === 2 ? '<span class="text-amber-400 font-semibold">40ft (2 slots)</span>' : '<span class="text-slate-400">20ft (1 slot)</span>'}
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-slate-300">
+            ${task.alwaysOn ? '<span class="text-amber-400/90 font-sans italic">Core Ballast</span>' : `${task.startDate} → ${task.endDate}`}
+          </td>
+          <td class="py-3 px-4 whitespace-nowrap text-right">
+            <div class="flex items-center justify-end gap-1">
+              <button class="btn-edit-task p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition" data-id="${task.id}" title="Edit Cargo Task">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <button class="btn-delete-task p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition" data-id="${task.id}" title="Delete Cargo Task">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </td>
+        `;
+        manifestTableBody.appendChild(tr);
+      });
+
+      // Bind row actions
+      manifestTableBody.querySelectorAll('.btn-edit-task').forEach(b => {
+        b.addEventListener('click', (e) => openEditTaskModal(e.currentTarget.dataset.id));
+      });
+      manifestTableBody.querySelectorAll('.btn-delete-task').forEach(b => {
+        b.addEventListener('click', (e) => deleteTask(e.currentTarget.dataset.id));
+      });
+    }
+
+    document.getElementById('manifestSearch').addEventListener('input', renderManifestTable);
+    document.getElementById('manifestStatusFilter').addEventListener('change', renderManifestTable);
+    document.getElementById('manifestCategoryFilter').addEventListener('change', renderManifestTable);
+
+    const taskModal = document.getElementById('taskModal');
+    const taskForm = document.getElementById('taskForm');
+    const taskAlwaysOn = document.getElementById('taskAlwaysOn');
+    const dateRangeFields = document.getElementById('dateRangeFields');
+    const taskStartDate = document.getElementById('taskStartDate');
+    const taskEndDate = document.getElementById('taskEndDate');
+
+    function toggleAlwaysOnInputs() {
+      if (taskAlwaysOn.checked) {
+        dateRangeFields.classList.add('opacity-40', 'pointer-events-none');
+        taskStartDate.removeAttribute('required');
+        taskEndDate.removeAttribute('required');
+      } else {
+        dateRangeFields.classList.remove('opacity-40', 'pointer-events-none');
+        taskStartDate.setAttribute('required', 'required');
+        taskEndDate.setAttribute('required', 'required');
+      }
+    }
+
+    taskAlwaysOn.addEventListener('change', toggleAlwaysOnInputs);
+
+    function openNewTaskModal() {
+      document.getElementById('taskEditId').value = '';
+      document.getElementById('taskModalTitle').innerHTML = '<span>📦</span><span>Load New Cargo Container</span>';
+      taskForm.reset();
+      taskAlwaysOn.checked = false;
+      taskStartDate.value = formatDateISO(currentSimDate);
+      taskEndDate.value = formatDateISO(addDays(currentSimDate, 14));
+      toggleAlwaysOnInputs();
+      taskModal.classList.remove('hidden');
+    }
+
+    function openEditTaskModal(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      document.getElementById('taskEditId').value = task.id;
+      document.getElementById('taskModalTitle').innerHTML = '<span>✏️</span><span>Modify Cargo Manifest</span>';
+      document.getElementById('taskTitle').value = task.title;
+      document.getElementById('taskCategory').value = task.category;
+      document.getElementById('taskWeight').value = task.weight || 1;
+      document.getElementById('taskNotes').value = task.notes || '';
+      taskAlwaysOn.checked = !!task.alwaysOn;
+      taskStartDate.value = task.startDate || formatDateISO(currentSimDate);
+      taskEndDate.value = task.endDate || formatDateISO(addDays(currentSimDate, 14));
+      toggleAlwaysOnInputs();
+      taskModal.classList.remove('hidden');
+    }
+
+    document.getElementById('btnOpenNewTaskModal').addEventListener('click', openNewTaskModal);
+    document.getElementById('btnCloseTaskModal').addEventListener('click', () => taskModal.classList.add('hidden'));
+    document.getElementById('btnCancelTaskModal').addEventListener('click', () => taskModal.classList.add('hidden'));
+
+    taskForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const editId = document.getElementById('taskEditId').value;
+      const title = document.getElementById('taskTitle').value.trim();
+      const category = document.getElementById('taskCategory').value;
+      const weight = parseInt(document.getElementById('taskWeight').value, 10) || 1;
+      const isAlways = taskAlwaysOn.checked;
+      const notes = document.getElementById('taskNotes').value.trim();
+
+      let sDate = '';
+      let eDate = '';
+      if (!isAlways) {
+        sDate = taskStartDate.value;
+        eDate = taskEndDate.value;
+        if (sDate > eDate) {
+          showToast('Start date cannot be after finish date.', 'error');
+          return;
+        }
+      }
+
+      if (editId) {
+        // Update existing task
+        const index = tasks.findIndex(t => t.id === editId);
+        if (index !== -1) {
+          tasks[index] = {
+            ...tasks[index],
+            title,
+            category,
+            weight,
+            alwaysOn: isAlways,
+            startDate: sDate,
+            endDate: eDate,
+            notes
+          };
+          showToast(`Cargo "${title}" updated.`);
+        }
+      } else {
+        // Create new task
+        const newTask = {
+          id: 't-' + Date.now(),
+          title,
+          category,
+          weight,
+          alwaysOn: isAlways,
+          startDate: sDate,
+          endDate: eDate,
+          notes
+        };
+        tasks.push(newTask);
+        showToast(`Cargo "${title}" loaded onboard.`);
+      }
+
+      saveTasks();
+      recalculateTimelineBounds();
+      renderManifestTable();
+      taskModal.classList.add('hidden');
+    });
+
+    function deleteTask(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      const name = task ? task.title : 'Cargo';
+      tasks = tasks.filter(t => t.id !== taskId);
+      saveTasks();
+      recalculateTimelineBounds();
+      renderManifestTable();
+      showToast(`Removed "${name}" from vessel.`);
+    }
+
+    const categoryModal = document.getElementById('categoryModal');
+    document.getElementById('btnOpenCategoryModal').addEventListener('click', () => {
+      renderCategoryModalList();
+      categoryModal.classList.remove('hidden');
+    });
+    document.getElementById('btnCloseCategoryModal').addEventListener('click', () => categoryModal.classList.add('hidden'));
+    document.getElementById('btnDoneCategories').addEventListener('click', () => categoryModal.classList.add('hidden'));
+
+    document.getElementById('btnAddCategory').addEventListener('click', () => {
+      const nameInput = document.getElementById('newCategoryName');
+      const colorInput = document.getElementById('newCategoryColor');
+      const name = nameInput.value.trim();
+      const color = colorInput.value;
+
+      if (!name) {
+        showToast('Please specify a category name.', 'error');
+        return;
+      }
+
+      const newId = 'cat-' + name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      if (categories.some(c => c.id === newId)) {
+        showToast('A category with that key already exists.', 'error');
+        return;
+      }
+
+      categories.push({ id: newId, name, color });
+      saveCategories();
+      nameInput.value = '';
+      renderCategoryPills();
+      showToast(`Category "${name}" created.`);
+    });
+
+    function setShipCapacity(newCapacity) {
+      const parsed = parseInt(newCapacity, 10);
+      if (isNaN(parsed) || parsed < 2) {
+        showToast('Capacity must be at least 2 slots.', 'error');
+        return;
+      }
+      const capped = Math.min(Math.max(parsed, 2), 100);
+      shipCapacity = capped;
+      localStorage.setItem('cargo_ship_capacity', shipCapacity);
+      updateStatsHUD();
+      showToast(`Vessel capacity set to ${shipCapacity} slots.`);
+    }
+
+    const btnDecreaseCapacity = document.getElementById('btnDecreaseCapacity');
+    const btnIncreaseCapacity = document.getElementById('btnIncreaseCapacity');
+    const btnEditCapacityHeader = document.getElementById('btnEditCapacityHeader');
+
+    if (capacityInput) {
+      capacityInput.addEventListener('change', (e) => setShipCapacity(e.target.value));
+      capacityInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          setShipCapacity(e.target.value);
+          capacityInput.blur();
+        }
+      });
+    }
+
+    if (btnDecreaseCapacity) {
+      btnDecreaseCapacity.addEventListener('click', () => setShipCapacity(shipCapacity - 1));
+    }
+
+    if (btnIncreaseCapacity) {
+      btnIncreaseCapacity.addEventListener('click', () => setShipCapacity(shipCapacity + 1));
+    }
+
+    if (btnEditCapacityHeader) {
+      btnEditCapacityHeader.addEventListener('click', () => {
+        if (capacityInput) {
+          capacityInput.focus();
+          capacityInput.select();
+        }
+      });
+    }
+
+    // Helper to escape CSV cell according to RFC 4180
+    function escapeCSV(val) {
+      if (val === null || val === undefined) return '""';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return `"${str}"`;
+    }
+
+    // Export tasks to CSV
+    document.getElementById('btnExportCSV').addEventListener('click', () => {
+      if (tasks.length === 0) {
+        showToast('Manifest is empty. Nothing to export.', 'error');
+        return;
+      }
+
+      const headers = ['Title', 'Category', 'StartDate', 'EndDate', 'AlwaysOn', 'Weight', 'Notes'];
+      const rows = tasks.map(t => {
+        const cat = getTaskCategory(t.category);
+        return [
+          escapeCSV(t.title),
+          escapeCSV(cat.name),
+          escapeCSV(t.startDate || ''),
+          escapeCSV(t.endDate || ''),
+          escapeCSV(t.alwaysOn ? 'true' : 'false'),
+          escapeCSV(t.weight || 1),
+          escapeCSV(t.notes || '')
+        ].join(',');
+      });
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cargo_manifest_${formatDateISO(new Date())}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast(`Exported ${tasks.length} tasks to CSV.`);
+    });
+
+    // Download Sample Template CSV
+    document.getElementById('btnDownloadSampleCSV').addEventListener('click', () => {
+      const sample = [
+        'Title,Category,StartDate,EndDate,AlwaysOn,Weight,Notes',
+        '"Infrastructure Modernization","Platform Migration","2026-10-01","2026-10-25","false","2","Multi-region deployment"',
+        '"Incident Commander Rotation","Incidents & Tech Debt","","","true","1","Ballast duty"',
+        '"Talent Performance Calibration","People & 1-on-1s","2026-10-05","2026-10-18","false","1","Quarterly calibration"'
+      ].join('\r\n');
+
+      const blob = new Blob(['\uFEFF' + sample], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sample_cargo_template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Sample CSV template downloaded.');
+    });
+
+    // Flexible multi-format Date Parser for incoming CSV dates
+    function parseDateToISO(str) {
+      if (!str) return '';
+      const clean = str.trim();
+      if (!clean) return '';
+
+      // Standard YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) return clean;
+
+      // Handle Slash MM/DD/YYYY or DD/MM/YYYY
+      const parts = clean.split(/[-/.]/);
+      if (parts.length === 3) {
+        if (parts[0].length === 4) {
+          // YYYY/MM/DD
+          return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+        }
+        if (parts[2].length === 4) {
+          // Could be MM/DD/YYYY or DD/MM/YYYY. Standardize on month first or fallback
+          const p1 = parseInt(parts[0], 10);
+          const p2 = parseInt(parts[1], 10);
+          if (p1 > 12 && p2 <= 12) {
+            // DD/MM/YYYY
+            return `${parts[2]}-${String(p2).padStart(2, '0')}-${String(p1).padStart(2, '0')}`;
+          }
+          // Default MM/DD/YYYY
+          return `${parts[2]}-${String(p1).padStart(2, '0')}-${String(p2).padStart(2, '0')}`;
+        }
+      }
+
+      const d = new Date(clean);
+      if (!isNaN(d.getTime())) {
+        return formatDateISO(d);
+      }
+      return '';
+    }
+
+    // CSV Parse Line supporting quotes
+    function parseCSVLine(text) {
+      const result = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"') {
+          if (inQuotes && text[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (c === ',' && !inQuotes) {
+          result.push(cur.trim());
+          cur = '';
+        } else {
+          cur += c;
+        }
+      }
+      result.push(cur.trim());
+      return result;
+    }
+
+    // File Input Trigger
+    const csvFileInput = document.getElementById('csvFileInput');
+    document.getElementById('btnTriggerImportCSV').addEventListener('click', () => {
+      csvFileInput.value = '';
+      csvFileInput.click();
+    });
+
+    csvFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const content = evt.target.result;
+          parseAndPrepareCSV(content);
+        } catch (err) {
+          showToast('Failed to parse CSV file: ' + err.message, 'error');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    function parseAndPrepareCSV(csvText) {
+      const lines = csvText.split(/\r\n|\n/).filter(line => line.trim().length > 0);
+      if (lines.length < 2) {
+        showToast('CSV must include at least a header row and 1 data row.', 'error');
+        return;
+      }
+
+      const headerCells = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+      
+      const colTitle = headerCells.findIndex(h => h.includes('title') || h.includes('task') || h.includes('name'));
+      const colCat = headerCells.findIndex(h => h.includes('cat'));
+      const colStart = headerCells.findIndex(h => h.includes('start'));
+      const colEnd = headerCells.findIndex(h => h.includes('end') || h.includes('finish'));
+      const colAlways = headerCells.findIndex(h => h.includes('always') || h.includes('ballast'));
+      const colWeight = headerCells.findIndex(h => h.includes('weight') || h.includes('size') || h.includes('slot'));
+      const colNotes = headerCells.findIndex(h => h.includes('note') || h.includes('desc') || h.includes('remark'));
+
+      if (colTitle === -1) {
+        showToast('CSV is missing a "Title" or "Task" column.', 'error');
+        return;
+      }
+
+      pendingCSVRows = [];
+      const distinctCategoriesInFile = new Set();
+
+      for (let i = 1; i < lines.length; i++) {
+        const row = parseCSVLine(lines[i]);
+        if (row.length === 0 || !row[colTitle]) continue;
+
+        const title = row[colTitle];
+        const categoryName = (colCat !== -1 && row[colCat]) ? row[colCat] : 'General';
+        const rawAlways = (colAlways !== -1 && row[colAlways]) ? row[colAlways].toLowerCase() : '';
+        const isAlways = rawAlways === 'true' || rawAlways === '1' || rawAlways === 'yes' || rawAlways === 'y';
+
+        const sDate = isAlways ? '' : parseDateToISO(colStart !== -1 ? row[colStart] : '');
+        const eDate = isAlways ? '' : parseDateToISO(colEnd !== -1 ? row[colEnd] : '');
+        const weight = (colWeight !== -1 && parseInt(row[colWeight], 10) === 2) ? 2 : 1;
+        const notes = (colNotes !== -1 && row[colNotes]) ? row[colNotes] : '';
+
+        distinctCategoriesInFile.add(categoryName);
+
+        pendingCSVRows.push({
+          title,
+          categoryName,
+          alwaysOn: isAlways,
+          startDate: sDate,
+          endDate: eDate,
+          weight,
+          notes
+        });
+      }
+
+      if (pendingCSVRows.length === 0) {
+        showToast('No valid cargo task rows detected in CSV.', 'error');
+        return;
+      }
+
+      // Show Import Modal Preview
+      const previewDiv = document.getElementById('csvImportPreview');
+      previewDiv.innerHTML = `
+        <div class="font-bold text-white mb-1.5 flex items-center justify-between">
+          <span>Found ${pendingCSVRows.length} tasks in CSV</span>
+          <span class="text-cyan-400 font-normal">${distinctCategoriesInFile.size} category streams</span>
+        </div>
+        <div class="space-y-1 text-slate-400">
+          ${pendingCSVRows.slice(0, 3).map(r => `<div>• <strong class="text-slate-200">${r.title}</strong> (${r.categoryName}, ${r.alwaysOn ? 'Always On' : (r.startDate || 'No date')})</div>`).join('')}
+          ${pendingCSVRows.length > 3 ? `<div class="text-slate-500 italic">...and ${pendingCSVRows.length - 3} more</div>` : ''}
+        </div>
+      `;
+
+      document.getElementById('csvImportModal').classList.remove('hidden');
+    }
+
+    function executeCSVImport() {
+      if (pendingCSVRows.length === 0) return;
+
+      const importMode = document.querySelector('input[name="importMode"]:checked').value;
+      const palette = ['#0284c7', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+
+      // Ensure any newly encountered categories exist
+      pendingCSVRows.forEach(item => {
+        let matchedCat = categories.find(c => c.name.toLowerCase() === item.categoryName.toLowerCase());
+        if (!matchedCat) {
+          const newId = 'cat-' + item.categoryName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+          const color = palette[categories.length % palette.length];
+          matchedCat = { id: newId, name: item.categoryName, color };
+          categories.push(matchedCat);
+        }
+        item.categoryId = matchedCat.id;
+      });
+
+      saveCategories();
+
+      const newTasks = pendingCSVRows.map((r, idx) => ({
+        id: 't-csv-' + Date.now() + '-' + idx,
+        title: r.title,
+        category: r.categoryId,
+        alwaysOn: r.alwaysOn,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        weight: r.weight,
+        notes: r.notes
+      }));
+
+      if (importMode === 'replace') {
+        tasks = newTasks;
+      } else {
+        tasks = [...tasks, ...newTasks];
+      }
+
+      saveTasks();
+      recalculateTimelineBounds();
+      renderCategoryPills();
+      renderManifestTable();
+
+      document.getElementById('csvImportModal').classList.add('hidden');
+      showToast(`Successfully loaded ${newTasks.length} cargo items (${importMode} mode).`);
+    }
+
+    const btnCloseImportModal = document.getElementById('btnCloseImportModal');
+    const btnCancelImportModal = document.getElementById('btnCancelImportModal');
+    const btnExecuteImport = document.getElementById('btnExecuteImport');
+
+    if (btnCloseImportModal) btnCloseImportModal.addEventListener('click', () => document.getElementById('csvImportModal').classList.add('hidden'));
+    if (btnCancelImportModal) btnCancelImportModal.addEventListener('click', () => document.getElementById('csvImportModal').classList.add('hidden'));
+    if (btnExecuteImport) btnExecuteImport.addEventListener('click', executeCSVImport);
+
+    document.getElementById('btnResetDemo').addEventListener('click', () => {
+      tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+      categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+      shipCapacity = 20;
+      localStorage.removeItem('cargo_tasks');
+      localStorage.removeItem('cargo_categories');
+      localStorage.removeItem('cargo_ship_capacity');
+      currentSimDate = new Date();
+      recalculateTimelineBounds();
+      renderCategoryPills();
+      updateTimelineLabels();
+      showToast('Reset sample task cargo successfully.');
+    });
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toastNotification');
+      toast.textContent = message;
+
+      if (type === 'error') {
+        toast.className = 'fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 bg-rose-600 text-white border border-rose-400 transition-all duration-300';
+      } else {
+        toast.className = 'fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 bg-slate-900 text-cyan-300 border border-cyan-500/50 shadow-cyan-950/60 transition-all duration-300';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3200);
+    }
+
+    window.addEventListener('load', () => {
+      resizeCanvas();
+      recalculateTimelineBounds();
+      renderCategoryPills();
+      updateTimelineLabels();
+      requestAnimationFrame(drawSimulation);
+    });
+  </script>
+</body>
+</html>
